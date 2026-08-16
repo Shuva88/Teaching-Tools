@@ -8,7 +8,7 @@ st.markdown(
 <style>
 .block-container {max-width: 1120px; padding-top: 1.2rem; padding-bottom: 1.5rem;}
 .home-tool-card {
-    min-height: 150px;
+    min-height: 168px;
     border: 1px solid rgba(128, 128, 128, 0.28);
     border-radius: 0.65rem;
     padding: 1rem 1.1rem 0.75rem;
@@ -33,7 +33,7 @@ st.markdown(
     "the method one decision at a time."
 )
 
-columns = st.columns(2, gap="large")
+columns = st.columns(3, gap="large")
 with columns[0]:
     st.markdown(
         """
@@ -64,6 +64,23 @@ with columns[1]:
     st.page_link(
         "pages/consecutive_days_off.py",
         label="Open Consecutive Days Off",
+        icon="➡️",
+        width="stretch",
+    )
+
+with columns[2]:
+    st.markdown(
+        """
+<div class="home-tool-card">
+  <h3>Single-Processor Sequencing</h3>
+  <p>Compare FCFS, SPT, and EDD using flow-time, lateness, and tardiness measures.</p>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+    st.page_link(
+        "pages/single_processor_sequencing.py",
+        label="Open Single-Processor Sequencing",
         icon="➡️",
         width="stretch",
     )

@@ -42,6 +42,15 @@ Results view shows the complete eight-partner schedule, required versus
 scheduled staffing, excess staffing, and the lower-bound argument proving that
 eight partners are minimum.
 
+### Single-Processor Sequencing
+
+Six fabrication orders compete for one CNC laser-cutting machine. The
+demonstration compares First Come, First Served (FCFS), Shortest Processing Time
+(SPT), and Earliest Due Date (EDD), showing each sequence, Gantt chart,
+order-level calculations, and five performance measures. The comparison makes
+the fixed-example trade-off explicit: SPT gives the lowest average flow time,
+while EDD gives the strongest tardiness-related results.
+
 ## Project structure
 
 ```text
@@ -50,17 +59,21 @@ Teaching-Tools/
 |-- app.py
 |-- algorithms/
 |   |-- consecutive_days_off.py
-|   `-- johnson.py
+|   |-- johnson.py
+|   `-- single_processor.py
 |-- components/
 |   |-- gantt.py
+|   |-- single_processor_gantt.py
 |   `-- staffing.py
 |-- pages/
 |   |-- consecutive_days_off.py
 |   |-- home.py
-|   `-- johnson_rule.py
+|   |-- johnson_rule.py
+|   `-- single_processor_sequencing.py
 |-- tests/
 |   |-- test_consecutive_days_off.py
-|   `-- test_johnson.py
+|   |-- test_johnson.py
+|   `-- test_single_processor.py
 |-- CLASSROOM_DISPLAY_GUIDELINES.md
 |-- requirements.txt
 `-- README.md
@@ -85,7 +98,7 @@ streamlit run app.py
 
 Streamlit will print the local URL, normally `http://localhost:8501`.
 
-Use the sidebar navigation to switch between demonstrations. Both pages are
+Use the sidebar navigation to switch between demonstrations. All pages are
 fixed demonstration mode: there are no editable inputs, quizzes, downloads, or
 authentication.
 
@@ -96,6 +109,7 @@ The demonstrations appear under **Operations Management** in the sidebar:
 - [Operations Management homepage](https://operationsmanagement.streamlit.app/)
 - [Johnson's Rule](https://operationsmanagement.streamlit.app/johnsons_rule)
 - [Scheduling Consecutive Days Off](https://operationsmanagement.streamlit.app/consecutive_days_off)
+- [Single-Processor Sequencing](https://operationsmanagement.streamlit.app/single_processor_sequencing)
 
 ## Release and display controls
 

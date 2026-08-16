@@ -25,9 +25,21 @@ consecutive_days_off = st.Page(
     title="Consecutive Days Off",
     url_path="consecutive_days_off",
 )
+single_processor_sequencing = st.Page(
+    "pages/single_processor_sequencing.py",
+    title="Single-Processor Sequencing",
+    url_path="single_processor_sequencing",
+)
 
 navigation = st.navigation(
-    {"Operations Management": [home, johnson_rule, consecutive_days_off]},
+    {
+        "Operations Management": [
+            home,
+            johnson_rule,
+            consecutive_days_off,
+            single_processor_sequencing,
+        ]
+    },
     position="sidebar",
 )
 navigation.run()

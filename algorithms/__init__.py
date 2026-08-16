@@ -25,6 +25,18 @@ from .johnson import (
     calculate_metrics,
     generate_johnson_steps,
 )
+from .single_processor import (
+    FABRICATION_JOBS,
+    SequencedOperation,
+    SequencingJob,
+    SequencingMetrics,
+    SingleProcessorSchedule,
+    build_single_processor_schedule,
+    calculate_sequencing_metrics,
+    sequence_edd,
+    sequence_fcfs,
+    sequence_spt,
+)
 
 __all__ = [
     "DAYS",
@@ -47,4 +59,14 @@ __all__ = [
     "calculate_metrics",
     "generate_consecutive_days_off_steps",
     "generate_johnson_steps",
+    "FABRICATION_JOBS",
+    "SequencedOperation",
+    "SequencingJob",
+    "SequencingMetrics",
+    "SingleProcessorSchedule",
+    "build_single_processor_schedule",
+    "calculate_sequencing_metrics",
+    "sequence_edd",
+    "sequence_fcfs",
+    "sequence_spt",
 ]
