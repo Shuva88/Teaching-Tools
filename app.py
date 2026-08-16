@@ -10,18 +10,24 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
+home = st.Page(
+    "pages/home.py",
+    title="Home",
+    default=True,
+)
 johnson_rule = st.Page(
     "pages/johnson_rule.py",
     title="Johnson's Rule",
-    default=True,
+    url_path="johnsons_rule",
 )
 consecutive_days_off = st.Page(
     "pages/consecutive_days_off.py",
     title="Consecutive Days Off",
+    url_path="consecutive_days_off",
 )
 
 navigation = st.navigation(
-    [johnson_rule, consecutive_days_off],
+    {"Operations Management": [home, johnson_rule, consecutive_days_off]},
     position="sidebar",
 )
 navigation.run()

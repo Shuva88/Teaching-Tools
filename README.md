@@ -56,6 +56,7 @@ Teaching-Tools/
 |   `-- staffing.py
 |-- pages/
 |   |-- consecutive_days_off.py
+|   |-- home.py
 |   `-- johnson_rule.py
 |-- tests/
 |   |-- test_consecutive_days_off.py
@@ -87,6 +88,14 @@ Streamlit will print the local URL, normally `http://localhost:8501`.
 Use the sidebar navigation to switch between demonstrations. Both pages are
 fixed demonstration mode: there are no editable inputs, quizzes, downloads, or
 authentication.
+
+## Classroom links
+
+The demonstrations appear under **Operations Management** in the sidebar:
+
+- [Operations Management homepage](https://operationsmanagement.streamlit.app/)
+- [Johnson's Rule](https://operationsmanagement.streamlit.app/johnsons_rule)
+- [Scheduling Consecutive Days Off](https://operationsmanagement.streamlit.app/consecutive_days_off)
 
 ## Release and display controls
 
