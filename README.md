@@ -4,6 +4,13 @@ A growing collection of simple, interactive demonstrations for Operations
 Management and Operations Research algorithms. Each demonstration reveals the
 algorithm one step at a time for classroom discussion.
 
+Before adding or redesigning an algorithm, follow
+[CLASSROOM_DISPLAY_GUIDELINES.md](CLASSROOM_DISPLAY_GUIDELINES.md). It defines
+the required staged presentation, one-screen classroom workspace, chart-label
+rules, calculation detail, and verification checklist established from the
+Johnson's Rule demonstration. `AGENTS.md` makes these standards standing
+instructions for future coding sessions in this repository.
+
 Version 1 contains only a fixed, demonstration-mode example of Johnson's Rule
 for a two-resource campus print shop.
 
@@ -28,6 +35,7 @@ time.
 
 ```text
 Teaching-Tools/
+├── AGENTS.md
 ├── app.py
 ├── algorithms/
 │   └── johnson.py
@@ -37,6 +45,7 @@ Teaching-Tools/
 │   └── johnson_rule.py
 ├── tests/
 │   └── test_johnson.py
+├── CLASSROOM_DISPLAY_GUIDELINES.md
 ├── requirements.txt
 └── README.md
 ```
