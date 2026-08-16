@@ -15,6 +15,13 @@ johnson_rule = st.Page(
     title="Johnson's Rule",
     default=True,
 )
+consecutive_days_off = st.Page(
+    "pages/consecutive_days_off.py",
+    title="Consecutive Days Off",
+)
 
-navigation = st.navigation([johnson_rule], position="sidebar")
+navigation = st.navigation(
+    [johnson_rule, consecutive_days_off],
+    position="sidebar",
+)
 navigation.run()

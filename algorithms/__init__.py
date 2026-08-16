@@ -1,5 +1,17 @@
 """Algorithm implementations for the teaching demonstrations."""
 
+from .consecutive_days_off import (
+    DAYS,
+    RESTAURANT_REQUIREMENTS,
+    DaysOffStep,
+    EmployeeAssignment,
+    PairOption,
+    build_employee_schedule,
+    calculate_daily_staffing,
+    calculate_excess_staffing,
+    generate_consecutive_days_off_steps,
+)
+
 from .johnson import (
     ORIGINAL_SEQUENCE,
     PRINT_SHOP_JOBS,
@@ -15,6 +27,11 @@ from .johnson import (
 )
 
 __all__ = [
+    "DAYS",
+    "RESTAURANT_REQUIREMENTS",
+    "DaysOffStep",
+    "EmployeeAssignment",
+    "PairOption",
     "ORIGINAL_SEQUENCE",
     "PRINT_SHOP_JOBS",
     "Candidate",
@@ -24,6 +41,10 @@ __all__ = [
     "Operation",
     "Schedule",
     "build_two_resource_schedule",
+    "build_employee_schedule",
+    "calculate_daily_staffing",
+    "calculate_excess_staffing",
     "calculate_metrics",
+    "generate_consecutive_days_off_steps",
     "generate_johnson_steps",
 ]
