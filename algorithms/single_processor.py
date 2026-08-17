@@ -47,6 +47,8 @@ class SequencingMetrics:
     average_tardiness: float
     tardy_jobs: int
     maximum_tardiness: int
+    utilization: float
+    average_jobs_in_system: float
 
 
 @dataclass(frozen=True)
@@ -218,17 +220,20 @@ def build_single_processor_schedule(
 def calculate_sequencing_metrics(
     schedule: SingleProcessorSchedule,
 ) -> SequencingMetrics:
-    """Calculate the five aggregate measures used in the demonstration."""
+    """Calculate the aggregate measures used in the demonstration."""
 
     job_count = len(schedule.operations)
     flow_times = [operation.flow_time for operation in schedule.operations]
+    total_flow_time = sum(flow_times)
     lateness_values = [operation.lateness for operation in schedule.operations]
     tardiness_values = [operation.tardiness for operation in schedule.operations]
 
     return SequencingMetrics(
-        average_flow_time=sum(flow_times) / job_count,
+        average_flow_time=total_flow_time / job_count,
         average_lateness=sum(lateness_values) / job_count,
         average_tardiness=sum(tardiness_values) / job_count,
         tardy_jobs=sum(value > 0 for value in tardiness_values),
         maximum_tardiness=max(tardiness_values),
+        utilization=schedule.total_processing_time / total_flow_time,
+        average_jobs_in_system=total_flow_time / schedule.total_processing_time,
     )

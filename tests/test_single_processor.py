@@ -126,6 +126,21 @@ class SingleProcessorFixedExampleTests(unittest.TestCase):
             self.assertEqual(metrics.maximum_tardiness, values[4])
             self.assertEqual(self.schedules[rule].total_processing_time, 31)
 
+        expected_additional_measures = {
+            "FCFS": ("31.63%", "3.16"),
+            "SPT": ("35.63%", "2.81"),
+            "EDD": ("29.81%", "3.35"),
+            "LPT": ("23.85%", "4.19"),
+            "CR": ("27.68%", "3.61"),
+        }
+        for rule, displayed_values in expected_additional_measures.items():
+            metrics = self.metrics[rule]
+            self.assertEqual(f"{metrics.utilization:.2%}", displayed_values[0])
+            self.assertEqual(
+                f"{metrics.average_jobs_in_system:.2f}",
+                displayed_values[1],
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
