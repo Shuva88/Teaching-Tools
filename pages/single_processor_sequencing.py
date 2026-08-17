@@ -184,7 +184,7 @@ def _render_metric_cards(rule: str, metrics: SequencingMetrics) -> None:
         ("Average tardiness", f"{metrics.average_tardiness:.2f} h", rule == "EDD"),
         ("Tardy orders", str(metrics.tardy_jobs), rule == "EDD"),
         ("Maximum tardiness", f"{metrics.maximum_tardiness} h", rule == "EDD"),
-        ("Utilization", f"{metrics.utilization:.2%}", rule == "SPT"),
+        ("Utilization metric", f"{metrics.utilization:.2%}", rule == "SPT"),
         (
             "Average number of jobs in the system",
             f"{metrics.average_jobs_in_system:.2f}",
@@ -269,8 +269,8 @@ def _render_problem_view() -> None:
         )
         st.markdown(
             "**Measures:** average flow time, average lateness, average "
-            "tardiness, number of tardy orders, maximum tardiness, utilization, "
-            "and average number of jobs in the system."
+            "tardiness, number of tardy orders, maximum tardiness, utilization "
+            "metric, and average number of jobs in the system."
         )
         st.button(
             "Start Demonstration",
@@ -374,7 +374,7 @@ def _comparison_table_html() -> str:
         ("Average tardiness (h)", "average_tardiness", "EDD", ".2f"),
         ("Number of tardy orders", "tardy_jobs", "EDD", "d"),
         ("Maximum tardiness (h)", "maximum_tardiness", "EDD", "d"),
-        ("Utilization", "utilization", "SPT", ".2%"),
+        ("Utilization metric", "utilization", "SPT", ".2%"),
         (
             "Average number of jobs in the system",
             "average_jobs_in_system",
@@ -419,7 +419,7 @@ def _render_calculations(rule: str) -> None:
 - Average tardiness: `({' + '.join(map(str, tardiness_values))}) / 6 = {sum(tardiness_values)} / 6 = {metrics.average_tardiness:.2f} h`
 - Tardy orders: `{', '.join(tardy_orders)} = {metrics.tardy_jobs}`
 - Maximum tardiness: `max({', '.join(map(str, tardiness_values))}) = {metrics.maximum_tardiness} h`
-- Utilization: `{schedule.total_processing_time} / {total_flow_time} = {metrics.utilization:.2%}`
+- Utilization metric: `{schedule.total_processing_time} / {total_flow_time} = {metrics.utilization:.2%}`
 - Average number of jobs in the system: `{total_flow_time} / {schedule.total_processing_time} = {metrics.average_jobs_in_system:.2f}`
         """
     )
