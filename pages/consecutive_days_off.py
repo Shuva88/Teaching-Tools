@@ -217,7 +217,7 @@ def _render_problem_view() -> None:
     st.markdown(
         "A delivery hub needs a different minimum number of partners each day. "
         "Every partner works **five days** and receives **two consecutive days "
-        "off**. Find the minimum-size weekly schedule that covers the demand."
+        "off**. Find a schedule that covers the demand."
     )
 
     columns = st.columns([1.05, 1], gap="large")
@@ -423,7 +423,7 @@ The constructed schedule uses 8 partners, so it meets this lower bound and is mi
 st.markdown(
     """
 <style>
-.block-container {max-width: 1240px; padding-top: 0.9rem; padding-bottom: 1.5rem;}
+.block-container {max-width: 1240px; padding-top: 2.2rem; padding-bottom: 1.5rem;}
 .days-off-grid {
     display: grid;
     grid-template-columns: repeat(7, minmax(60px, 1fr));
@@ -489,7 +489,7 @@ st.markdown(
     background: rgba(128, 128, 128, 0.07);
 }
 @media (max-width: 800px) {
-    .block-container {padding-top: 0.6rem;}
+    .block-container {padding-top: 1.5rem;}
     .days-off-grid, .days-off-pattern {grid-template-columns: repeat(4, 1fr);}
     .days-off-pair-grid {grid-template-columns: repeat(2, 1fr);}
     .days-off-day-card {min-height: 68px;}
