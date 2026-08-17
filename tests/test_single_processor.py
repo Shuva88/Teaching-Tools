@@ -6,8 +6,11 @@ from algorithms.single_processor import (
     FABRICATION_JOBS,
     build_single_processor_schedule,
     calculate_sequencing_metrics,
+    generate_critical_ratio_decisions,
+    sequence_cr,
     sequence_edd,
     sequence_fcfs,
+    sequence_lpt,
     sequence_spt,
 )
 
@@ -18,6 +21,8 @@ class SingleProcessorFixedExampleTests(unittest.TestCase):
             "FCFS": sequence_fcfs(FABRICATION_JOBS),
             "SPT": sequence_spt(FABRICATION_JOBS),
             "EDD": sequence_edd(FABRICATION_JOBS),
+            "LPT": sequence_lpt(FABRICATION_JOBS),
+            "CR": sequence_cr(FABRICATION_JOBS),
         }
         self.schedules = {
             rule: build_single_processor_schedule(rule, sequence, FABRICATION_JOBS)
@@ -32,6 +37,42 @@ class SingleProcessorFixedExampleTests(unittest.TestCase):
         self.assertEqual(self.sequences["FCFS"], ("A", "B", "C", "D", "E", "F"))
         self.assertEqual(self.sequences["SPT"], ("C", "A", "D", "F", "B", "E"))
         self.assertEqual(self.sequences["EDD"], ("C", "B", "E", "A", "D", "F"))
+        self.assertEqual(self.sequences["LPT"], ("E", "B", "F", "D", "A", "C"))
+        self.assertEqual(self.sequences["CR"], ("E", "C", "B", "A", "F", "D"))
+
+    def test_critical_ratios_are_recomputed_at_each_decision(self) -> None:
+        decisions = generate_critical_ratio_decisions(FABRICATION_JOBS)
+        self.assertEqual(
+            [decision.current_time for decision in decisions],
+            [0, 8, 10, 17, 20, 26],
+        )
+        self.assertEqual(
+            [decision.selected_job for decision in decisions],
+            ["E", "C", "B", "A", "F", "D"],
+        )
+        self.assertEqual(
+            [[candidate.job for candidate in decision.candidates] for decision in decisions],
+            [
+                ["A", "B", "C", "D", "E", "F"],
+                ["A", "B", "C", "D", "F"],
+                ["A", "B", "D", "F"],
+                ["A", "D", "F"],
+                ["D", "F"],
+                ["D"],
+            ],
+        )
+        time_zero_b = next(
+            candidate.critical_ratio
+            for candidate in decisions[0].candidates
+            if candidate.job == "B"
+        )
+        time_eight_b = next(
+            candidate.critical_ratio
+            for candidate in decisions[1].candidates
+            if candidate.job == "B"
+        )
+        self.assertAlmostEqual(time_zero_b, 16 / 7)
+        self.assertAlmostEqual(time_eight_b, 8 / 7)
 
     def test_fcfs_order_level_calculations(self) -> None:
         rows = [
@@ -73,6 +114,8 @@ class SingleProcessorFixedExampleTests(unittest.TestCase):
             "FCFS": (16.33, -3.67, 2.17, 3, 7),
             "SPT": (14.50, -5.50, 3.33, 2, 13),
             "EDD": (17.33, -2.67, 0.33, 1, 2),
+            "LPT": (21.67, 1.67, 5.17, 2, 23),
+            "CR": (18.67, -1.33, 1.00, 3, 3),
         }
         for rule, values in expected.items():
             metrics = self.metrics[rule]

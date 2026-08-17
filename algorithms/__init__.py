@@ -27,14 +27,19 @@ from .johnson import (
 )
 from .single_processor import (
     FABRICATION_JOBS,
+    CriticalRatioCandidate,
+    CriticalRatioDecision,
     SequencedOperation,
     SequencingJob,
     SequencingMetrics,
     SingleProcessorSchedule,
     build_single_processor_schedule,
     calculate_sequencing_metrics,
+    generate_critical_ratio_decisions,
+    sequence_cr,
     sequence_edd,
     sequence_fcfs,
+    sequence_lpt,
     sequence_spt,
 )
 
@@ -60,13 +65,18 @@ __all__ = [
     "generate_consecutive_days_off_steps",
     "generate_johnson_steps",
     "FABRICATION_JOBS",
+    "CriticalRatioCandidate",
+    "CriticalRatioDecision",
     "SequencedOperation",
     "SequencingJob",
     "SequencingMetrics",
     "SingleProcessorSchedule",
     "build_single_processor_schedule",
     "calculate_sequencing_metrics",
+    "generate_critical_ratio_decisions",
+    "sequence_cr",
     "sequence_edd",
     "sequence_fcfs",
+    "sequence_lpt",
     "sequence_spt",
 ]

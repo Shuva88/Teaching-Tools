@@ -1,4 +1,4 @@
-"""Classroom demonstration comparing three single-processor sequencing rules."""
+"""Classroom demonstration comparing five single-processor sequencing rules."""
 
 from __future__ import annotations
 
@@ -8,21 +8,27 @@ import streamlit as st
 
 from algorithms.single_processor import (
     FABRICATION_JOBS,
+    CriticalRatioDecision,
     SequencingMetrics,
     SingleProcessorSchedule,
     build_single_processor_schedule,
     calculate_sequencing_metrics,
+    generate_critical_ratio_decisions,
     sequence_edd,
     sequence_fcfs,
+    sequence_lpt,
     sequence_spt,
 )
 from components.single_processor_gantt import make_single_processor_gantt
 
 
+CR_DECISIONS = generate_critical_ratio_decisions(FABRICATION_JOBS)
 SEQUENCES = {
     "FCFS": sequence_fcfs(FABRICATION_JOBS),
     "SPT": sequence_spt(FABRICATION_JOBS),
     "EDD": sequence_edd(FABRICATION_JOBS),
+    "LPT": sequence_lpt(FABRICATION_JOBS),
+    "CR": tuple(decision.selected_job for decision in CR_DECISIONS),
 }
 SCHEDULES = {
     rule: build_single_processor_schedule(rule, sequence, FABRICATION_JOBS)
@@ -32,7 +38,7 @@ METRICS = {
     rule: calculate_sequencing_metrics(schedule)
     for rule, schedule in SCHEDULES.items()
 }
-RULE_ORDER = ("FCFS", "SPT", "EDD")
+RULE_ORDER = ("FCFS", "SPT", "EDD", "LPT", "CR")
 TOTAL_PROCESSING_TIME = sum(job.processing_time for job in FABRICATION_JOBS)
 
 STARTED_KEY = "single_processor_started"
@@ -76,6 +82,8 @@ def _rule_description(rule: str) -> str:
         "FCFS": "First Come, First Served: retain the orders' arrival order.",
         "SPT": "Shortest Processing Time: arrange orders from shortest to longest processing time.",
         "EDD": "Earliest Due Date: arrange orders from earliest to latest due time.",
+        "LPT": "Longest Processing Time: arrange orders from longest to shortest processing time.",
+        "CR": "Critical Ratio: recompute (due time − current time) / processing time and select the smallest ratio.",
     }[rule]
 
 
@@ -84,6 +92,8 @@ def _criterion_label(rule: str) -> str:
         "FCFS": "Arrival",
         "SPT": "Processing",
         "EDD": "Due",
+        "LPT": "Processing",
+        "CR": "CR",
     }[rule]
 
 
@@ -92,8 +102,20 @@ def _criterion_value(rule: str, job_name: str) -> str:
     if rule == "FCFS":
         return f"#{job.arrival_order}"
     if rule == "SPT":
-        return f"{job.processing_time} h"
-    return f"{job.due_time} h"
+        return f"{job.processing_time}\N{NO-BREAK SPACE}h"
+    if rule == "EDD":
+        return f"{job.due_time}\N{NO-BREAK SPACE}h"
+    if rule == "LPT":
+        return f"{job.processing_time}\N{NO-BREAK SPACE}h"
+    decision = next(
+        decision for decision in CR_DECISIONS if decision.selected_job == job_name
+    )
+    candidate = next(
+        candidate
+        for candidate in decision.candidates
+        if candidate.job == job_name
+    )
+    return f"{candidate.critical_ratio:.2f}"
 
 
 def _render_sequence(rule: str) -> None:
@@ -128,6 +150,33 @@ def _schedule_rows(schedule: SingleProcessorSchedule) -> list[dict[str, int | st
     ]
 
 
+def _render_cr_decisions(decisions: tuple[CriticalRatioDecision, ...]) -> None:
+    rows = []
+    for decision in decisions:
+        candidate_chips = []
+        for candidate in decision.candidates:
+            selected_class = (
+                " selected" if candidate.job == decision.selected_job else ""
+            )
+            candidate_chips.append(
+                f"<span class='cr-candidate{selected_class}'>"
+                f"{escape(candidate.job)}: "
+                f"({candidate.due_time}−{candidate.current_time})/"
+                f"{candidate.processing_time}="
+                f"{candidate.critical_ratio:.2f}</span>"
+            )
+        rows.append(
+            "<div class='cr-decision-row'>"
+            f"<strong>Time {decision.current_time}</strong>"
+            f"<div class='cr-candidates'>{''.join(candidate_chips)}</div>"
+            f"<b>Select {escape(decision.selected_job)}</b></div>"
+        )
+    st.markdown(
+        "<div class='cr-decisions'>" + "".join(rows) + "</div>",
+        unsafe_allow_html=True,
+    )
+
+
 def _render_metric_cards(rule: str, metrics: SequencingMetrics) -> None:
     values = (
         ("Average flow time", f"{metrics.average_flow_time:.2f} h", rule == "SPT"),
@@ -148,7 +197,13 @@ def _render_metric_cards(rule: str, metrics: SequencingMetrics) -> None:
 
 
 def _render_controls(stage: int) -> None:
-    labels = ("Next: SPT", "Next: EDD", "Compare Rules")
+    labels = (
+        "Next: SPT",
+        "Next: EDD",
+        "Next: LPT",
+        "Next: CR",
+        "Compare Rules",
+    )
     columns = st.columns(3)
     with columns[0]:
         st.button(
@@ -174,7 +229,7 @@ def _render_problem_view() -> None:
     st.markdown(
         "Six customer orders are waiting for one CNC laser-cutting machine. All "
         "orders are available at time 0, and each order must finish before the "
-        "next one starts. Compare how three sequencing rules affect completion "
+        "next one starts. Compare how five sequencing rules affect completion "
         "and due-date performance."
     )
 
@@ -202,6 +257,8 @@ def _render_problem_view() -> None:
 - **FCFS — First Come, First Served:** process orders in arrival order.
 - **SPT — Shortest Processing Time:** process the shortest order first.
 - **EDD — Earliest Due Date:** process the order with the earliest due time first.
+- **LPT — Longest Processing Time:** process the longest order first.
+- **CR — Critical Ratio:** repeatedly calculate `(due − current time) / processing` and choose the smallest ratio.
             """
         )
         st.markdown(
@@ -245,30 +302,61 @@ def _render_rule_view(stage: int) -> None:
         _render_metric_cards(rule, metrics)
 
     with columns[1]:
-        st.markdown("#### Order-by-order calculations")
-        st.dataframe(
-            _schedule_rows(schedule),
-            hide_index=True,
-            width="stretch",
-            height=252,
-            column_config={
-                "Order": st.column_config.TextColumn(width="small"),
-                "Processing": st.column_config.NumberColumn("Process"),
-            },
-        )
-        if rule == "FCFS":
-            st.info("FCFS requires no reordering: the arrival order is the sequence.")
-        elif rule == "SPT":
-            st.success(
-                f"SPT gives the lowest average flow time in this example: "
-                f"**{metrics.average_flow_time:.2f} hours**."
+        if rule == "CR":
+            st.markdown("#### Dynamic CR calculations")
+            decision_tab, schedule_tab = st.tabs(
+                ["CR decisions", "Order calculations"]
+            )
+            with decision_tab:
+                _render_cr_decisions(CR_DECISIONS)
+            with schedule_tab:
+                st.dataframe(
+                    _schedule_rows(schedule),
+                    hide_index=True,
+                    width="stretch",
+                    height=252,
+                    column_config={
+                        "Order": st.column_config.TextColumn(width="small"),
+                        "Processing": st.column_config.NumberColumn("Process"),
+                    },
+                )
+            st.info(
+                "Recompute **CR = (due time − current time) / processing time** "
+                "for every unscheduled order after each completion, then select "
+                "the smallest CR."
             )
         else:
-            st.info(
-                "**Lateness = flow time − due time** and may be negative when an "
-                "order finishes early. **Tardiness = max(0, lateness)** and can "
-                "never be negative."
+            st.markdown("#### Order-by-order calculations")
+            st.dataframe(
+                _schedule_rows(schedule),
+                hide_index=True,
+                width="stretch",
+                height=252,
+                column_config={
+                    "Order": st.column_config.TextColumn(width="small"),
+                    "Processing": st.column_config.NumberColumn("Process"),
+                },
             )
+            if rule == "FCFS":
+                st.info(
+                    "FCFS requires no reordering: the arrival order is the sequence."
+                )
+            elif rule == "SPT":
+                st.success(
+                    f"SPT gives the lowest average flow time in this example: "
+                    f"**{metrics.average_flow_time:.2f} hours**."
+                )
+            elif rule == "EDD":
+                st.info(
+                    "**Lateness = flow time − due time** and may be negative when "
+                    "an order finishes early. **Tardiness = max(0, lateness)** "
+                    "and can never be negative."
+                )
+            else:
+                st.info(
+                    "LPT places the longest processing time first and the "
+                    "shortest processing time last."
+                )
         _render_controls(stage)
 
 
@@ -291,8 +379,9 @@ def _comparison_table_html() -> str:
         body.append(f"<tr><th>{escape(label)}</th>{''.join(cells)}</tr>")
     return (
         "<div class='single-comparison-wrap'><table class='single-comparison'>"
-        "<thead><tr><th>Performance measure</th><th>FCFS</th><th>SPT</th>"
-        "<th>EDD</th></tr></thead><tbody>"
+        "<thead><tr><th>Performance measure</th>"
+        + "".join(f"<th>{rule}</th>" for rule in RULE_ORDER)
+        + "</tr></thead><tbody>"
         + "".join(body)
         + "</tbody></table></div>"
     )
@@ -330,7 +419,7 @@ def _render_results() -> None:
 
     controls = st.columns([1.3, 1.3, 5])
     with controls[0]:
-        st.button("Back to EDD", on_click=_previous, width="stretch")
+        st.button("Back to CR", on_click=_previous, width="stretch")
     with controls[1]:
         st.button("Restart", on_click=_restart, width="stretch")
 
@@ -356,11 +445,29 @@ def _render_results() -> None:
             "No rule is universally best; the appropriate rule depends on the "
             "performance criterion that matters."
         )
+        st.caption(
+            "LPT prioritizes long orders. CR is dynamic and recalculates urgency "
+            "after every completion; neither is best on the highlighted criteria "
+            "for this fixed example."
+        )
 
     with gantt_tab:
-        st.caption("All three charts use the same 0–31 hour scale.")
-        chart_columns = st.columns(3, gap="medium")
-        for column, rule in zip(chart_columns, RULE_ORDER):
+        st.caption("All five charts use the same 0–31 hour scale.")
+        first_chart_row = st.columns(3, gap="medium")
+        for column, rule in zip(first_chart_row, RULE_ORDER[:3]):
+            with column:
+                st.plotly_chart(
+                    make_single_processor_gantt(
+                        SCHEDULES[rule],
+                        rule,
+                        TOTAL_PROCESSING_TIME,
+                        height=230,
+                    ),
+                    width="stretch",
+                    config={"displayModeBar": False, "responsive": True},
+                )
+        second_chart_row = st.columns(3, gap="medium")
+        for column, rule in zip(second_chart_row, RULE_ORDER[3:]):
             with column:
                 st.plotly_chart(
                     make_single_processor_gantt(
@@ -374,8 +481,12 @@ def _render_results() -> None:
                 )
 
     with calculations_tab:
-        calculation_columns = st.columns(3, gap="large")
-        for column, rule in zip(calculation_columns, RULE_ORDER):
+        first_calculation_row = st.columns(3, gap="large")
+        for column, rule in zip(first_calculation_row, RULE_ORDER[:3]):
+            with column:
+                _render_calculations(rule)
+        second_calculation_row = st.columns(2, gap="large")
+        for column, rule in zip(second_calculation_row, RULE_ORDER[3:]):
             with column:
                 _render_calculations(rule)
 
@@ -434,12 +545,37 @@ st.markdown(
     color: #006A4E;
     font-weight: 700;
 }
+.cr-decisions {display: flex; flex-direction: column; gap: 0.34rem;}
+.cr-decision-row {
+    display: grid;
+    grid-template-columns: 58px 1fr 62px;
+    align-items: center;
+    gap: 0.35rem;
+    border-bottom: 1px solid rgba(128, 128, 128, 0.22);
+    padding: 0.25rem 0;
+    font-size: 0.78rem;
+}
+.cr-decision-row > b {text-align: right; color: #006A4E;}
+.cr-candidates {display: flex; flex-wrap: wrap; gap: 0.18rem;}
+.cr-candidate {
+    border: 1px solid rgba(128, 128, 128, 0.28);
+    border-radius: 999px;
+    padding: 0.08rem 0.30rem;
+    white-space: nowrap;
+}
+.cr-candidate.selected {
+    background: rgba(0, 158, 115, 0.15);
+    border-color: rgba(0, 158, 115, 0.58);
+    font-weight: 700;
+}
 @media (max-width: 800px) {
     .block-container {padding-top: 0.6rem;}
     .single-sequence {display: grid; grid-template-columns: repeat(6, 1fr);}
     .single-sequence-arrow {display: none;}
     .single-sequence-card {min-width: 0;}
     .single-metric-grid {grid-template-columns: repeat(2, 1fr);}
+    .cr-decision-row {grid-template-columns: 52px 1fr;}
+    .cr-decision-row > b {grid-column: 2; text-align: left;}
 }
 </style>
 """,

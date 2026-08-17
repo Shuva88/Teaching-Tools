@@ -49,6 +49,27 @@ class SequencingMetrics:
     maximum_tardiness: int
 
 
+@dataclass(frozen=True)
+class CriticalRatioCandidate:
+    """A recomputed critical ratio for one order at a decision time."""
+
+    job: str
+    current_time: int
+    due_time: int
+    processing_time: int
+    critical_ratio: float
+
+
+@dataclass(frozen=True)
+class CriticalRatioDecision:
+    """All candidate ratios and the selected order at one CR decision."""
+
+    number: int
+    current_time: int
+    candidates: tuple[CriticalRatioCandidate, ...]
+    selected_job: str
+
+
 FABRICATION_JOBS: tuple[SequencingJob, ...] = (
     SequencingJob("A", processing_time=3, due_time=21, arrival_order=1),
     SequencingJob("B", processing_time=7, due_time=16, arrival_order=2),
@@ -86,6 +107,73 @@ def sequence_edd(jobs: tuple[SequencingJob, ...]) -> tuple[str, ...]:
             jobs,
             key=lambda job: (job.due_time, job.arrival_order),
         )
+    )
+
+
+def sequence_lpt(jobs: tuple[SequencingJob, ...]) -> tuple[str, ...]:
+    """Return jobs from longest to shortest processing time."""
+
+    return tuple(
+        job.name
+        for job in sorted(
+            jobs,
+            key=lambda job: (-job.processing_time, job.arrival_order),
+        )
+    )
+
+
+def generate_critical_ratio_decisions(
+    jobs: tuple[SequencingJob, ...],
+) -> tuple[CriticalRatioDecision, ...]:
+    """Recompute remaining-job critical ratios after every selected order."""
+
+    remaining = list(sorted(jobs, key=lambda job: job.arrival_order))
+    decisions: list[CriticalRatioDecision] = []
+    current_time = 0
+
+    while remaining:
+        candidates = tuple(
+            CriticalRatioCandidate(
+                job=job.name,
+                current_time=current_time,
+                due_time=job.due_time,
+                processing_time=job.processing_time,
+                critical_ratio=(job.due_time - current_time) / job.processing_time,
+            )
+            for job in remaining
+        )
+        selected = min(
+            candidates,
+            key=lambda candidate: (
+                candidate.critical_ratio,
+                next(
+                    job.arrival_order
+                    for job in remaining
+                    if job.name == candidate.job
+                ),
+            ),
+        )
+        selected_job = next(job for job in remaining if job.name == selected.job)
+        decisions.append(
+            CriticalRatioDecision(
+                number=len(decisions) + 1,
+                current_time=current_time,
+                candidates=candidates,
+                selected_job=selected.job,
+            )
+        )
+        current_time += selected_job.processing_time
+        remaining.remove(selected_job)
+
+    return tuple(decisions)
+
+
+def sequence_cr(jobs: tuple[SequencingJob, ...]) -> tuple[str, ...]:
+    """Return the dynamic smallest-critical-ratio sequence."""
+
+    return tuple(
+        decision.selected_job
+        for decision in generate_critical_ratio_decisions(jobs)
     )
 
 

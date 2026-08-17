@@ -73,7 +73,7 @@ with columns[2]:
         """
 <div class="home-tool-card">
   <h3>Single-Processor Sequencing</h3>
-  <p>Compare FCFS, SPT, and EDD using flow-time, lateness, and tardiness measures.</p>
+  <p>Compare FCFS, SPT, EDD, LPT, and CR using flow-time, lateness, and tardiness measures.</p>
 </div>
 """,
         unsafe_allow_html=True,

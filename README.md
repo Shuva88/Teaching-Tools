@@ -46,10 +46,12 @@ eight partners are minimum.
 
 Six fabrication orders compete for one CNC laser-cutting machine. The
 demonstration compares First Come, First Served (FCFS), Shortest Processing Time
-(SPT), and Earliest Due Date (EDD), showing each sequence, Gantt chart,
-order-level calculations, and five performance measures. The comparison makes
-the fixed-example trade-off explicit: SPT gives the lowest average flow time,
-while EDD gives the strongest tardiness-related results.
+(SPT), Earliest Due Date (EDD), Longest Processing Time (LPT), and dynamic
+Critical Ratio (CR), showing each sequence, Gantt chart, order-level
+calculations, and five performance measures. The CR stage recomputes every
+unscheduled order's ratio after each completion. The comparison makes the
+fixed-example trade-off explicit: SPT gives the lowest average flow time, while
+EDD gives the strongest tardiness-related results.
 
 ## Project structure
 
