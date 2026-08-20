@@ -1,5 +1,21 @@
 """Algorithm implementations for the teaching demonstrations."""
 
+from .clarke_wright import (
+    PPT_CAPACITY,
+    PPT_DEMANDS,
+    PPT_EXPECTED_ACCEPTED,
+    PPT_EXPECTED_FINAL_ROUTES,
+    PPT_SAVINGS,
+    ClarkeWrightResult,
+    MergeDecision,
+    SavingsPair,
+    initialize_routes,
+    order_final_routes_for_display,
+    process_savings_pair,
+    route_load,
+    run_clarke_wright_from_savings,
+)
+
 from .consecutive_days_off import (
     DAYS,
     RESTAURANT_REQUIREMENTS,
@@ -44,6 +60,14 @@ from .single_processor import (
 )
 
 __all__ = [
+    "PPT_CAPACITY",
+    "PPT_DEMANDS",
+    "PPT_EXPECTED_ACCEPTED",
+    "PPT_EXPECTED_FINAL_ROUTES",
+    "PPT_SAVINGS",
+    "ClarkeWrightResult",
+    "MergeDecision",
+    "SavingsPair",
     "DAYS",
     "RESTAURANT_REQUIREMENTS",
     "DaysOffStep",
@@ -64,6 +88,11 @@ __all__ = [
     "calculate_metrics",
     "generate_consecutive_days_off_steps",
     "generate_johnson_steps",
+    "initialize_routes",
+    "order_final_routes_for_display",
+    "process_savings_pair",
+    "route_load",
+    "run_clarke_wright_from_savings",
     "FABRICATION_JOBS",
     "CriticalRatioCandidate",
     "CriticalRatioDecision",

@@ -30,6 +30,11 @@ single_processor_sequencing = st.Page(
     title="Single-Processor Sequencing",
     url_path="single_processor_sequencing",
 )
+clarke_wright = st.Page(
+    "pages/clarke_wright.py",
+    title="VRP: Clarke-Wright",
+    url_path="vrp_clarke_wright",
+)
 
 navigation = st.navigation(
     {
@@ -38,6 +43,7 @@ navigation = st.navigation(
             johnson_rule,
             consecutive_days_off,
             single_processor_sequencing,
+            clarke_wright,
         ]
     },
     position="sidebar",

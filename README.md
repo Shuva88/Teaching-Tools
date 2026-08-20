@@ -29,8 +29,8 @@ calculations.
 ### Scheduling Consecutive Days Off
 
 A restaurant delivery hub has fixed minimum staffing requirements from Monday
-through Sunday. Each partner works five days and receives two consecutive days
-off. The demonstration separates each partner assignment into two classroom
+through Sunday. Each employee works five days and receives two consecutive days
+off. The demonstration separates each employee assignment into two classroom
 steps:
 
 1. Identify and select the consecutive days-off pair.
@@ -38,9 +38,9 @@ steps:
 
 It includes all days at a tied requirement level, compares eligible pair
 totals, and states the deterministic Monday-to-Sunday tie assumption. The
-Results view shows the complete eight-partner schedule, required versus
+Results view shows the complete eight-employee schedule, required versus
 scheduled staffing, excess staffing, and the lower-bound argument proving that
-eight partners are minimum.
+eight employees are minimum.
 
 ### Single-Processor Sequencing
 
@@ -53,6 +53,21 @@ unscheduled order's ratio after each completion. The comparison makes the
 fixed-example trade-off explicit: SPT gives the lowest average flow time, while
 EDD gives the strongest tardiness-related results.
 
+### VRP: Clarke-Wright
+
+The fixed 23-customer example processes one savings decision per instructor
+click. Each Next or Previous action runs inside the browser, so Streamlit does
+not rerun between decisions. A browser-native SVG diagram pulses the candidate
+customers, emphasizes their current sub-paths, and draws accepted customer
+links smoothly. For visual clarity, depot links remain
+hidden while the savings list is processed. A separate final click connects
+the two end nodes of each completed customer sub-path to the depot. The savings
+list uses **S. No.** for its ordered entries rather than calling them algorithm
+steps. It remains
+visible with accepted rows in green, rejected rows in red, and the current row
+automatically centred. Customer demands appear in parentheses inside the nodes.
+The final five route loads are 95, 90, 90, 90, and 95.
+
 ## Project structure
 
 ```text
@@ -60,19 +75,23 @@ Teaching-Tools/
 |-- AGENTS.md
 |-- app.py
 |-- algorithms/
+|   |-- clarke_wright.py
 |   |-- consecutive_days_off.py
 |   |-- johnson.py
 |   `-- single_processor.py
 |-- components/
+|   |-- clarke_wright.py
 |   |-- gantt.py
 |   |-- single_processor_gantt.py
 |   `-- staffing.py
 |-- pages/
+|   |-- clarke_wright.py
 |   |-- consecutive_days_off.py
 |   |-- home.py
 |   |-- johnson_rule.py
 |   `-- single_processor_sequencing.py
 |-- tests/
+|   |-- test_clarke_wright.py
 |   |-- test_consecutive_days_off.py
 |   |-- test_johnson.py
 |   `-- test_single_processor.py
@@ -112,6 +131,7 @@ The demonstrations appear under **Operations Management** in the sidebar:
 - [Johnson's Rule](https://operationsmanagement.streamlit.app/johnsons_rule)
 - [Scheduling Consecutive Days Off](https://operationsmanagement.streamlit.app/consecutive_days_off)
 - [Single-Processor Sequencing](https://operationsmanagement.streamlit.app/single_processor_sequencing)
+- [VRP: Clarke-Wright](https://operationsmanagement.streamlit.app/vrp_clarke_wright)
 
 ## Release and display controls
 

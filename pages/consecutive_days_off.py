@@ -427,8 +427,8 @@ The constructed schedule uses 8 partners, so it meets this lower bound and is mi
 st.markdown(
     """
 <style>
-.block-container {max-width: 1240px; padding-top: 0.9rem; padding-bottom: 1.5rem;}
-.days-off-workspace-title {margin-top: 0; padding-top: 3.25rem;}
+.block-container {max-width: 1240px; padding-top: 3.75rem !important; padding-bottom: 1.5rem;}
+.days-off-workspace-title {margin-top: 0; padding-top: 0;}
 .days-off-grid {
     display: grid;
     grid-template-columns: repeat(7, minmax(60px, 1fr));
@@ -494,7 +494,7 @@ st.markdown(
     background: rgba(128, 128, 128, 0.07);
 }
 @media (max-width: 800px) {
-    .block-container {padding-top: 0.6rem;}
+    .block-container {padding-top: 4rem !important;}
     .days-off-grid, .days-off-pattern {grid-template-columns: repeat(4, 1fr);}
     .days-off-pair-grid {grid-template-columns: repeat(2, 1fr);}
     .days-off-day-card {min-height: 68px;}

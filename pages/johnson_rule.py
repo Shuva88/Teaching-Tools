@@ -478,7 +478,7 @@ def _render_algorithm_view(
 st.markdown(
     """
 <style>
-.block-container {max-width: 1240px; padding-top: 0.9rem; padding-bottom: 1.5rem;}
+.block-container {max-width: 1240px; padding-top: 3.75rem !important; padding-bottom: 1.5rem;}
 .johnson-table-wrap {width: 100%; overflow-x: auto; margin: 0.2rem 0 0.5rem;}
 .johnson-table {width: 100%; border-collapse: collapse; font-size: 0.95rem;}
 .johnson-table th, .johnson-table td {
@@ -517,7 +517,7 @@ st.markdown(
 .sequence-slot .position-label {font-size: 0.68rem; opacity: 0.70;}
 .sequence-slot strong {font-size: 1.2rem; margin-top: 0.05rem;}
 @media (max-width: 800px) {
-    .block-container {padding-top: 0.6rem;}
+    .block-container {padding-top: 4rem !important;}
     .sequence-slots {grid-template-columns: repeat(3, 1fr);}
     .johnson-table th, .johnson-table td {padding: 0.38rem 0.3rem; font-size: 0.88rem;}
 }

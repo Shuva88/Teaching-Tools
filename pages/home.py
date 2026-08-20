@@ -84,3 +84,21 @@ with columns[2]:
         icon="➡️",
         width="stretch",
     )
+
+vrp_columns = st.columns(3, gap="large")
+with vrp_columns[0]:
+    st.markdown(
+        """
+<div class="home-tool-card">
+  <h3>VRP: Clarke-Wright</h3>
+  <p>Process one savings pair per click, build the customer sub-paths, and connect them to the depot in a separate final action.</p>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+    st.page_link(
+        "pages/clarke_wright.py",
+        label="Open VRP: Clarke-Wright",
+        icon="➡️",
+        width="stretch",
+    )

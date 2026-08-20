@@ -511,7 +511,7 @@ def _render_results() -> None:
 st.markdown(
     """
 <style>
-.block-container {max-width: 1240px; padding-top: 0.9rem; padding-bottom: 1.5rem;}
+.block-container {max-width: 1240px; padding-top: 3.75rem !important; padding-bottom: 1.5rem;}
 .single-sequence {
     display: flex;
     align-items: center;
@@ -586,7 +586,7 @@ st.markdown(
     font-weight: 700;
 }
 @media (max-width: 800px) {
-    .block-container {padding-top: 0.6rem;}
+    .block-container {padding-top: 4rem !important;}
     .single-sequence {display: grid; grid-template-columns: repeat(6, 1fr);}
     .single-sequence-arrow {display: none;}
     .single-sequence-card {min-width: 0;}

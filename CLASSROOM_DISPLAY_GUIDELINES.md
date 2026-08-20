@@ -50,8 +50,20 @@ data needed to explain it.
 - Prefer a compact two-column algorithm workspace on wide screens: working data
   on one side and the partial solution, explanation, and controls on the other.
 - Keep the current state visible; do not append every previous explanation.
+- Do not spend vertical space on implementation commentary such as interaction
+  mode, click mechanics, animation technology, or page-refresh behavior unless
+  it directly teaches the algorithm.
+- Preserve enough top clearance for Streamlit's fixed toolbar. The established
+  project standard is `.block-container` top padding of `3.75rem !important` on
+  desktop and `4rem !important` at widths up to 800px. Do not replace this with
+  smaller page-specific padding or add compensating padding to an individual
+  title. Check the first heading and adjacent controls below the toolbar at both
+  widths.
 - Use restrained headings, spacing, and card height so the workspace fits at
   common projector sizes such as 1366 x 768 or 1440 x 900.
+- Constrain embedded workspaces to the available viewport and fit the visual's
+  coordinate range to its actual content. Avoid blank canvas below or beside
+  the data, and use the available horizontal width to separate crowded nodes.
 - Reflow columns and sequence slots for narrow screens without clipping or
   horizontal page overflow.
 - Use tabs or another staged control for distinct result components instead of
