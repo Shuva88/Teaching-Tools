@@ -13,7 +13,33 @@ the Johnson's Rule demonstration.
 - A display redesign must not silently change the algorithm, tie-breaking rule,
   data, or performance calculations.
 
-## 2. Use three staged views
+## 2. Default interaction architecture for fixed-data demonstrations
+
+Apply this architecture by default to every new fixed-data demonstration. Do
+not retrofit an existing demonstration unless the user explicitly requests it.
+
+When the tool starts, Python should:
+
+- run the algorithm once and generate the complete sequence of intermediate
+  states;
+- perform all calculations, validation, and correctness checks; and
+- serialize the state sequence to JSON for the display component.
+
+After that initial computation, a browser-side JavaScript/SVG component should:
+
+- handle Previous and Next navigation;
+- animate and highlight the current decision; and
+- update tables, routes, graphs, and other already-computed visual states.
+
+Do not trigger a Streamlit/Python rerun for every demonstration step. Python
+may rerun for initial load, Start or Restart, refresh, navigation, or when a
+tool genuinely requires a new computation.
+
+If a future tool has a separate user-input mode, Python may recompute after the
+user submits new data. Once that new state sequence has been computed, use
+browser-side step playback again wherever practical.
+
+## 3. Use three staged views
 
 Each demonstration should have mutually exclusive views rather than one page
 that continuously expands.
@@ -30,7 +56,7 @@ that continuously expands.
 Do not require the instructor to scroll between the current decision and the
 data needed to explain it.
 
-## 3. Make each interaction correspond to one conceptual step
+## 4. Make each interaction correspond to one conceptual step
 
 - Do not combine two important textbook steps into one click.
 - Separate identifying or selecting the next item from applying the resulting
@@ -45,7 +71,7 @@ data needed to explain it.
 - Provide Previous, Next, and Restart controls. Keep them beside the current
   explanation rather than below a long history of steps.
 
-## 4. Design for classroom projection
+## 5. Design for classroom projection
 
 - Prefer a compact two-column algorithm workspace on wide screens: working data
   on one side and the partial solution, explanation, and controls on the other.
@@ -69,7 +95,7 @@ data needed to explain it.
 - Use tabs or another staged control for distinct result components instead of
   stacking several large sections vertically.
 
-## 5. Chart and Gantt standards
+## 6. Chart and Gantt standards
 
 - Use the same time scale for schedules being compared.
 - Place comparison charts side by side on wide screens when they remain
@@ -85,7 +111,7 @@ data needed to explain it.
 - Verify short-duration bars, endpoint labels, and annotations at the actual
   deployed chart width.
 
-## 6. Present results in teaching order
+## 7. Present results in teaching order
 
 1. Final solution or sequence.
 2. Visual schedule or chart comparison.
@@ -96,7 +122,7 @@ Definitions alone are insufficient. Show the actual processing totals,
 completion times, denominators, arithmetic, units, and calculated values used
 for makespan, idle time, utilization, flow time, or other reported measures.
 
-## 7. Verification before deployment
+## 8. Verification before deployment
 
 - Run focused unit tests for the algorithm and expected fixed-example results.
 - Exercise every presentation state, including Previous, Next, Restart, ties,
@@ -117,6 +143,8 @@ for makespan, idle time, utilization, flow time, or other reported measures.
 Before releasing a new demonstration, confirm:
 
 - [ ] Algorithm logic and UI logic are separate.
+- [ ] New fixed-data tools precompute states in Python and use browser-side
+      step playback without per-step Streamlit reruns.
 - [ ] Problem, Algorithm, and Results are staged views.
 - [ ] The active decision and its supporting data fit together on one screen.
 - [ ] Distinct conceptual steps use distinct interactions.

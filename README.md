@@ -142,6 +142,9 @@ The demonstrations appear under **Operations Management** in the sidebar:
   together within approximately one projector screen.
 - Distinct conceptual actions use distinct clicks; all candidates and tie
   assumptions are shown before the update is applied.
+- New fixed-data demonstrations compute and validate their full state sequence
+  once in Python, then use browser-side JSON/SVG playback for step navigation
+  and animation. Existing tools are not retrofitted unless explicitly requested.
 - Chart labels must be reserved space outside data marks and checked at the
   actual display width.
 - After changing an imported component, restart Streamlit before visual
