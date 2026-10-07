@@ -211,6 +211,11 @@ for makespan, idle time, utilization, flow time, or other reported measures.
 - Report precisely what was checked. Emulated phone/tablet widths are responsive
   browser checks, not proof that a physical device was tested. Never claim public
   deployment verification from a local screenshot.
+- Streamlit Community Cloud adds a hosting iframe and a bottom-right creator
+  badge/popover that local runs do not have. Check real pointer clicks, not forced
+  or scripted DOM clicks: the badge can intercept navigation even when its button
+  is within the viewport. Reserve hosted-only footer clearance where needed; do
+  not hide the hosting badge or change the local layout to compensate.
 - After changing an imported display component, restart Streamlit before visual
   verification. Do not rely only on hot reload; it may retain an older imported
   module.

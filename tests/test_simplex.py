@@ -308,6 +308,8 @@ class SimplexExampleOneTests(unittest.TestCase):
         self.assertEqual(html.count('"id":"'), 27)
         self.assertIn("state.id==='S26'?'Key takeaways'", html)
         self.assertIn('"workspaceHidden":true', html)
+        self.assertIn("cloudFooterClearance=window.parent.frameElement?.title==='streamlitApp'?56:0", html)
+        self.assertIn("frame.getBoundingClientRect().top-12-cloudFooterClearance", html)
 
     def test_qa_review_renders_all_states_without_navigation(self) -> None:
         pages = [build_simplex_review_state_html(self.demo, index) for index in range(27)]

@@ -240,7 +240,9 @@ function fitWorkspace(){
   if(app.classList.contains('review-mode'))return;
   const frame=window.frameElement;
   if(frame){
-    const available=Math.floor(window.parent.innerHeight-frame.getBoundingClientRect().top-12);
+    // Cloud's hosting-frame footer must not cover the playback controls.
+    const cloudFooterClearance=window.parent.frameElement?.title==='streamlitApp'?56:0;
+    const available=Math.floor(window.parent.innerHeight-frame.getBoundingClientRect().top-12-cloudFooterClearance);
     if(available>0){
       frame.style.setProperty('height',available+'px','important');
       const host=frame.closest('[data-testid="stElementContainer"]');
