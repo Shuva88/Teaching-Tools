@@ -35,16 +35,34 @@ clarke_wright = st.Page(
     title="VRP: Clarke-Wright",
     url_path="vrp_clarke_wright",
 )
+simplex_algorithm = st.Page(
+    "pages/simplex_algorithm.py",
+    title="Simplex Algorithm - Example 1",
+    url_path="simplex_algorithm",
+)
 
+operations_research_home = st.Page(
+    "pages/operations_research_home.py",
+    title="Home",
+    url_path="operations_research",
+)
+
+operations_management_pages = [
+    home,
+    johnson_rule,
+    consecutive_days_off,
+    single_processor_sequencing,
+    clarke_wright,
+]
+
+operations_research_pages = [
+    operations_research_home,
+    simplex_algorithm,
+]
 navigation = st.navigation(
     {
-        "Operations Management": [
-            home,
-            johnson_rule,
-            consecutive_days_off,
-            single_processor_sequencing,
-            clarke_wright,
-        ]
+        "Operations Management": operations_management_pages,
+        "Operations Research": operations_research_pages,
     },
     position="sidebar",
 )

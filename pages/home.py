@@ -6,7 +6,7 @@ import streamlit as st
 st.markdown(
     """
 <style>
-.block-container {max-width: 1120px; padding-top: 1.2rem; padding-bottom: 1.5rem;}
+.block-container {max-width: 1120px; padding-top: 3.75rem !important; padding-bottom: 1.5rem;}
 .home-tool-card {
     min-height: 168px;
     border: 1px solid rgba(128, 128, 128, 0.28);
@@ -18,7 +18,7 @@ st.markdown(
 .home-tool-card h3 {margin: 0 0 0.45rem;}
 .home-tool-card p {margin: 0; opacity: 0.82;}
 @media (max-width: 800px) {
-    .block-container {padding-top: 0.75rem;}
+    .block-container {padding-top: 4rem !important;}
     .home-tool-card {min-height: auto;}
 }
 </style>

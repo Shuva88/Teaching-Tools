@@ -7,8 +7,8 @@ reveals the algorithm one decision at a time for classroom discussion.
 Before adding or redesigning an algorithm, follow
 [CLASSROOM_DISPLAY_GUIDELINES.md](CLASSROOM_DISPLAY_GUIDELINES.md). It defines
 the required staged presentation, one-screen classroom workspace, chart-label
-rules, calculation detail, and verification checklist established from the
-Johnson's Rule demonstration. `AGENTS.md` makes these standards standing
+rules, calculation detail, and verification checklist established across the
+demonstrations, including the Simplex review lessons. `AGENTS.md` makes these standards standing
 instructions for future coding sessions in this repository.
 
 ## Demonstrations
@@ -68,6 +68,22 @@ visible with accepted rows in green, rejected rows in red, and the current row
 automatically centred. Customer demands appear in parentheses inside the nodes.
 The final five route loads are 95, 90, 90, 90, and 95.
 
+### Simplex Algorithm - Example 1
+
+The Operations Research section begins with a fixed four-constraint
+maximization example. Its 27 teaching states connect equality form, basic
+variables, row 0, the ratio test, pivot operations, and optimality to a
+synchronized feasible-region graph. Six deliberate pause questions support
+classroom discussion. The BFS path is `(0, 0)` to `(4, 0)` to the optimum
+`(3, 3/2)`, where `Z = 21`.
+
+The landing page presents the model, then a full-width, left-aligned three-point
+overview, then Start. During pivots, the current tableau stays above the next
+tableau, matching notebook work; the next tableau develops row by row. The
+optimality explanation retains the final tableau and graph. A separate final
+Key takeaways state follows. These are reviewed teaching choices, not layouts
+to replace automatically with a generic Results screen.
+
 ## Project structure
 
 ```text
@@ -78,10 +94,12 @@ Teaching-Tools/
 |   |-- clarke_wright.py
 |   |-- consecutive_days_off.py
 |   |-- johnson.py
+|   |-- simplex.py
 |   `-- single_processor.py
 |-- components/
 |   |-- clarke_wright.py
 |   |-- gantt.py
+|   |-- simplex.py
 |   |-- single_processor_gantt.py
 |   `-- staffing.py
 |-- pages/
@@ -89,11 +107,14 @@ Teaching-Tools/
 |   |-- consecutive_days_off.py
 |   |-- home.py
 |   |-- johnson_rule.py
+|   |-- operations_research_home.py
+|   |-- simplex_algorithm.py
 |   `-- single_processor_sequencing.py
 |-- tests/
 |   |-- test_clarke_wright.py
 |   |-- test_consecutive_days_off.py
 |   |-- test_johnson.py
+|   |-- test_simplex.py
 |   `-- test_single_processor.py
 |-- CLASSROOM_DISPLAY_GUIDELINES.md
 |-- requirements.txt
@@ -119,13 +140,24 @@ streamlit run app.py
 
 Streamlit will print the local URL, normally `http://localhost:8501`.
 
+To use the Simplex review port without activating the virtual environment:
+
+```powershell
+.\.venv\Scripts\python.exe -m streamlit run app.py --server.port 8502 --server.headless true
+```
+
+Open [the local Simplex page](http://localhost:8502/simplex_algorithm).
+
 Use the sidebar navigation to switch between demonstrations. All pages are
 fixed demonstration mode: there are no editable inputs, quizzes, downloads, or
 authentication.
 
 ## Classroom links
 
-The demonstrations appear under **Operations Management** in the sidebar:
+The sidebar separates the demonstrations into **Operations Management** and
+**Operations Research**.
+
+Operations Management:
 
 - [Operations Management homepage](https://operationsmanagement.streamlit.app/)
 - [Johnson's Rule](https://operationsmanagement.streamlit.app/johnsons_rule)
@@ -133,11 +165,17 @@ The demonstrations appear under **Operations Management** in the sidebar:
 - [Single-Processor Sequencing](https://operationsmanagement.streamlit.app/single_processor_sequencing)
 - [VRP: Clarke-Wright](https://operationsmanagement.streamlit.app/vrp_clarke_wright)
 
+Operations Research:
+
+- [Operations Research homepage](https://operationsmanagement.streamlit.app/operations_research)
+- [Simplex Algorithm - Example 1](https://operationsmanagement.streamlit.app/simplex_algorithm)
+
 ## Release and display controls
 
 - `app.py` explicitly registers the pages visible in the application.
-- A demonstration uses mutually exclusive Problem, Algorithm Workspace, and
-  Results views rather than one continuously expanding page.
+- A demonstration uses staged views rather than one continuously expanding
+  page. Preserve topic-specific teaching requirements, including retaining a
+  tableau or graph while explaining the result.
 - The active working data, current explanation, progress, and controls stay
   together within approximately one projector screen.
 - Distinct conceptual actions use distinct clicks; all candidates and tie
@@ -149,6 +187,20 @@ The demonstrations appear under **Operations Management** in the sidebar:
   actual display width.
 - After changing an imported component, restart Streamlit before visual
   verification so cached modules do not hide the change.
+- Verify the actual Streamlit route, not only isolated component screenshots.
+  Check every state with realistic browser height and the sidebar both open and
+  closed. Keep desktop teaching states on screen; on very small screens, prefer
+  one controlled content scroll area with visible navigation to clipped text.
+
+## Maintenance
+
+The temporary scroll-all-states Simplex QA page has been retired. Keep focused
+tests and the reusable state-rendering helper for future verification. Generated
+review screenshots, temporary browser profiles, and Python caches are not release
+assets and may be removed after review. Do not delete fixed-example data,
+algorithm/component modules, tests, development configuration, or the local
+virtual environment as part of cosmetic cleanup. Do not commit, push, or deploy
+without an explicit request.
 
 The detailed checklist and durable display rules are in
 [CLASSROOM_DISPLAY_GUIDELINES.md](CLASSROOM_DISPLAY_GUIDELINES.md).
