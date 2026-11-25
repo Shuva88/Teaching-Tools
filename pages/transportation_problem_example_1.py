@@ -70,14 +70,20 @@ if started:
         st.markdown(f"## {TITLE}")
     with controls:
         st.button("Restart", on_click=_restart, key="powerco_restart")
-    st.iframe(playback_html(st.session_state[METHOD]), height=460)
+    # The player resizes its host. Give that host a separate lifetime from the landing table.
+    with st.container(key="transportation_playback"):
+        st.iframe(playback_html(st.session_state[METHOD]), height=460)
 else:
     st.title(TITLE)
     st.html(f'<div class="transportation-input-frame">{landing_tableau()}</div>')
     st.markdown(
         "A distributor ships cartons from three warehouses (S1–S3) to four stores (D1–D4). "
-        "The table shows the shipping cost per carton in rupees, the supply at each warehouse, "
-        "and the demand at each store. Supply and demand both total **125 cartons**. "
+        "The table shows shipping costs per carton (in rupees), supply, and demand. "
+        "Supply and demand both total **125 cartons**, "
+        "so the problem is **balanced**.\n\n"
+        "If demand exceeds supply, add a **dummy supply row**. If supply exceeds demand, "
+        "add a **dummy demand column**. Use the difference between the totals as the dummy "
+        "supply or demand, with a unit cost of **zero** in every dummy cell. "
         "Choose a method to build a shipping plan, then check whether it has the lowest cost."
     )
     st.radio(
