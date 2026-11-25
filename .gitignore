@@ -5,3 +5,4 @@ __pycache__/
 .streamlit/secrets.toml
 .vscode/
 qa_artifacts/
+/[Mm]y [Tt]eaching [Mm]aterials/

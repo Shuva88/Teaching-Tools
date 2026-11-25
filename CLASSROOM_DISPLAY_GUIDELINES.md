@@ -75,6 +75,13 @@ data needed to explain it.
   placement or update when those are distinct concepts.
 - Use short, textbook-adjacent language that students can follow while looking
   at the visual state.
+- Use plain language for MBA learners and assume familiarity with terms taught
+  in the course slides. Introduce unfamiliar terms before using them. State
+  scan directions explicitly when the order matters. Keep introductory observations with the
+  first worked decision and repeat them only if needed to explain a new choice.
+- When a number follows directly from a highlighted equation, name the known
+  value and the result. Reserve detailed arithmetic for the steps it helps
+  students understand.
 - Highlight all current candidates, including ties, before applying the
   decision.
 - Explain why tied alternatives remain valid and state the deterministic choice
@@ -114,6 +121,12 @@ data needed to explain it.
   widths.
 - Use restrained headings, spacing, and card height so the workspace fits at
   common projector sizes such as 1366 x 768 or 1440 x 900.
+- Leave a small gap between the title and the first tableau. Use coordinated
+  shades with enough contrast to distinguish labels, values and selections.
+  In Transportation, use a slightly deeper shade for supply and demand,
+  readable boxed costs, and dedicated labeled margins for penalties or dual
+  variables. Mark completed rows and columns with thin dashed lines that
+  leave costs and allocations readable.
 - Budget for the browser's usable content height, not the physical monitor's
   resolution. Browser tabs, address/bookmark bars, the taskbar, sidebar, zoom, and
   Streamlit's toolbar reduce available space. Also check a reduced-height laptop

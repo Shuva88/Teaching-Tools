@@ -50,3 +50,19 @@ with columns[0]:
         icon="➡️",
         width="stretch",
     )
+with columns[1]:
+    st.markdown(
+        """
+<div class="home-tool-card">
+  <h3>Transportation Problem - Example 1</h3>
+  <p>Plan shipments from three warehouses to four stores using Northwest Corner, Least Cost, or Vogel’s method, then test the plan for optimality.</p>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+    st.page_link(
+        "pages/transportation_problem_example_1.py",
+        label="Open Transportation Problem - Example 1",
+        icon="➡️",
+        width="stretch",
+    )

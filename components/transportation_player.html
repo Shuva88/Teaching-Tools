@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__METHOD__</title>
+<style>
+:root {
+  color-scheme: light;
+  --ink: #263248;
+  --muted: #526079;
+  --line: #cbd4e2;
+  --accent: #51447c;
+  --cost: #394967;
+  --allocation: #214b83;
+  --rc: #772b63;
+  --selection: #625196;
+  --selection-fill: #f0eafb;
+  --strike: #ae4358;
+  font: 16px/1.35 system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+body { margin: 0; color: var(--ink); background: #fff; }
+main {
+  height: 100dvh; display: grid; grid-template-rows: auto minmax(0, max-content) auto;
+  align-content: start; gap: 7px;
+}
+header, nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+header { font-size: .88rem; color: var(--muted); }
+header strong { color: var(--accent); }
+#step { flex: none; }
+.presentation { overflow: auto; overscroll-behavior: contain; }
+.workspace { display: grid; gap: 10px; align-items: start; }
+.workspace.with-equations { grid-template-columns: minmax(0, 1fr) minmax(175px, .33fr); }
+figure { margin: 0; }
+table { width: 100%; table-layout: fixed; border-collapse: collapse; text-align: center; }
+col.source, col.supply { width: 14%; }
+col.auxiliary { width: 18%; }
+th, td { border: 1px solid var(--line); }
+thead th, tbody th { background: #ebf0f8; color: #273a57; }
+.margin { background: #d9e4f4; color: #263b59; font-weight: 650; }
+.margin.working-margin { box-shadow: inset 0 0 0 2px var(--selection); background: var(--selection-fill); }
+thead th, tfoot th, tfoot td { padding: 4px 2px; font-size: .84rem; }
+tbody th, td.margin { font-size: .88rem; }
+td.cell { height: 67px; position: relative; background: #fcfdff; }
+tbody tr:nth-child(even) td.cell { background: #f5f7fc; }
+.cost {
+  position: absolute; z-index: 2; top: 4px; left: 4px; padding: 1px 5px;
+  font-size: .9rem; line-height: 1.15; color: var(--cost); border: 1px solid #8095ab;
+  border-radius: 3px; background: #e8eef6; font-weight: 700;
+}
+.allocation {
+  position: relative; z-index: 2; display: inline-grid; place-items: center;
+  border-radius: 50%; min-width: 31px; height: 31px;
+  color: var(--allocation); border: 1.5px solid currentColor; background: #fff; font-weight: 700;
+}
+.reduced { color: var(--rc); font-weight: 750; }
+.allocation, .reduced { margin-top: 17px; }
+.strike-grid { position: relative; }
+.strikes { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+.stroke { position: absolute; }
+.row-stroke { border-top: 1.5px dashed var(--strike); }
+.column-stroke { border-left: 1.5px dashed var(--strike); }
+.stroke-key { color: #8c3647; }
+.stroke-key::before {
+  content: ""; display: inline-block; width: 1.15em; margin-right: .35em;
+  border-top: 1.5px dashed var(--strike); vertical-align: middle;
+}
+.tied { box-shadow: inset 0 0 0 2px #84658d; }
+.chosen { box-shadow: inset 0 0 0 2px var(--selection); background: var(--selection-fill) !important; }
+.auxiliary { padding: 3px 2px; font-size: .82rem; font-weight: 650; }
+.dual { background: #eeeaf7; color: #403365; }
+.dual.highlight { background: #e3d9f6; box-shadow: inset 0 0 0 2px var(--selection); }
+.penalty { background: #f1ecf7; color: #493c6a; font-variant-numeric: tabular-nums; }
+figcaption { display: flex; flex-wrap: wrap; gap: 3px 14px; margin-top: 5px; font-size: .81rem; }
+.cost-key { color: var(--cost); }
+.allocation-key { color: var(--allocation); }
+.rc-key { color: var(--rc); }
+.equations, .explanation { border: 1px solid var(--line); border-radius: 7px; }
+.equations { padding: 7px 9px; }
+.equations h2, .explanation h2 { margin: 0 0 4px; font-size: 1rem; }
+.equations ol { list-style-position: inside; margin: 0; padding: 0; }
+.equations li { padding: 3px 5px; border-radius: 3px; font-variant-numeric: tabular-nums; }
+.equations li::marker { color: var(--muted); font-size: .85em; }
+.equations li.active { color: #3d2e68; font-weight: 700; background: var(--selection-fill); }
+.explanation { margin: 8px 0 2px; padding: 8px 11px; border-left: 4px solid var(--accent); }
+.explanation-body p { margin: 0; }
+.explanation-body p + p { margin-top: .3em; }
+.result .explanation { background: #f5f2fa; }
+sub { line-height: 0; }
+nav { justify-content: flex-end; padding: 0 2px 2px; }
+button { min-height: 36px; padding: 4px 14px; background: #fff; color: var(--ink);
+  border: 1px solid #97acb8; border-radius: 6px; font: inherit; cursor: pointer; }
+button:focus-visible { outline: 2px solid #254fa3; outline-offset: 1px; }
+#next { background: var(--accent); color: #fff; border-color: var(--accent); }
+button:disabled, #next:disabled { background: #edf1f2; border-color: var(--line); color: #506579; cursor: default; }
+@media (max-width: 650px) {
+  .workspace.with-equations { grid-template-columns: minmax(0, 1fr); gap: 7px; }
+  .equations ol { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 651px) and (max-height: 540px) {
+  td.cell { height: 56px; }
+  .allocation { min-width: 28px; height: 28px; margin-top: 20px; }
+  .explanation { padding-top: 6px; padding-bottom: 6px; }
+}
+@media (min-width: 651px) and (max-height: 480px) {
+  td.cell { height: 53px; }
+  .explanation { font-size: .95rem; line-height: 1.25; }
+}
+@media (max-width: 430px) {
+  header { font-size: .78rem; }
+  col.source, col.supply { width: 18%; }
+  col.auxiliary { width: 17%; }
+  td.cell { height: 61px; }
+  .cost { top: 3px; left: 3px; padding: 1px 3px; font-size: .84rem; }
+  .auxiliary { font-size: .68rem; }
+  .allocation { min-width: 26px; height: 26px; }
+  thead th, tfoot th, tfoot td { font-size: .7rem; }
+  button { min-height: 44px; }
+}
+</style>
+</head>
+<body>
+<main>
+  <header><div><strong>__METHOD__</strong> · <span id="phase"></span></div><span id="step"></span></header>
+  <div class="presentation">
+    <div class="workspace">
+      <figure>
+        <div class="strike-grid">
+          <table id="tableau" aria-label="Transportation table"></table>
+          <div class="strikes" aria-hidden="true"></div>
+        </div>
+        <figcaption>
+          <span class="cost-key">□ Unit cost</span>
+          <span class="allocation-key">○ Allocation</span>
+          <span class="rc-key" id="rc-key" hidden>± Reduced cost</span>
+          <span class="stroke-key" id="stroke-key" hidden>No supply or demand left</span>
+        </figcaption>
+      </figure>
+      <section class="equations" aria-labelledby="equation-heading" hidden>
+        <h2 id="equation-heading">Basic-cell equations</h2>
+        <ol id="equations"></ol>
+      </section>
+    </div>
+    <section class="explanation" aria-live="polite">
+      <h2 id="explanation-title"></h2>
+      <div id="explanation-body" class="explanation-body"></div>
+    </section>
+  </div>
+  <nav aria-label="Teaching steps">
+    <button id="previous" type="button">Previous</button>
+    <button id="next" type="button">Next</button>
+  </nav>
+</main>
+<script type="application/json" id="lesson-data">__DATA__</script>
+<script>
+const {method, costs, supply, demand, states} = JSON.parse(document.getElementById('lesson-data').textContent);
+const byId = id => document.getElementById(id);
+const presentation = document.querySelector('.presentation');
+const workspace = document.querySelector('.workspace');
+const equations = document.querySelector('.equations');
+const table = byId('tableau');
+const strikes = document.querySelector('.strikes');
+const previous = byId('previous');
+const next = byId('next');
+let index = 0;
+
+function includesPair(pairs, first, second) {
+  return (pairs || []).some(([a, b]) => a === first && b === second);
+}
+
+function signed(value) {
+  return value < 0 ? '−' + Math.abs(value) : value > 0 ? '+' + value : '0';
+}
+
+function dualCell(state, axis, i) {
+  const value = state[axis][i];
+  const highlight = includesPair(state.highlighted_duals, axis, i) ? ' highlight' : '';
+  return `<td class="auxiliary dual${highlight}">${axis}<sub>${i + 1}</sub> = ${value ?? '?'}</td>`;
+}
+
+function penaltyCell(state, axis, index) {
+  const item = (state.penalties || []).find(p => p.axis === axis && p.index === index);
+  const detail = item ? ` title="${item.second} − ${item.low} = ${item.value}"` : '';
+  return `<td class="auxiliary penalty${emphasis(state, axis, index)}"${detail}>${item?.value ?? '—'}</td>`;
+}
+
+function emphasis(state, axis, index) {
+  if (includesPair([state.selected_line].filter(Boolean), axis, index)) return ' chosen';
+  return includesPair(state.lines, axis, index) ? ' tied' : '';
+}
+
+function cellMarkup(state, cost, i, j) {
+  const classes = ['cell'];
+  if (includesPair(state.candidates, i, j)) classes.push('tied');
+  if (state.selected?.[0] === i && state.selected?.[1] === j) classes.push('chosen');
+  const allocation = state.grid[i][j];
+  const rc = state.rc[i][j];
+  let center = '';
+  if (allocation) center = `<span class="allocation" aria-label="Allocation ${allocation}">${allocation}</span>`;
+  if (rc !== null) center = `<span class="reduced" aria-label="Reduced cost ${signed(rc)}">${signed(rc)}</span>`;
+  return `<td class="${classes.join(' ')}"><span class="cost" aria-label="Unit cost ${cost}">${cost}</span>${center}</td>`;
+}
+
+function tableMarkup(state) {
+  const allocating = state.phase === 'Build the shipping plan';
+  const duals = Boolean(state.equations.length);
+  const penalties = allocating && method === 'VAM';
+  const extra = duals || penalties;
+  const label = duals ? 'Dual variables' : 'Penalty';
+  const supplyMargin = allocating ? state.supply : supply;
+  const demandMargin = allocating ? state.demand : demand;
+  const headers = state.demand.map((_, j) =>
+    `<th scope="col" class="${emphasis(state, 'column', j)}">D${j + 1}</th>`
+  ).join('');
+  const rows = costs.map((row, i) => {
+    const cells = row.map((cost, j) => cellMarkup(state, cost, i, j)).join('');
+    const working = allocating && state.selected?.[0] === i ? ' working-margin' : '';
+    const auxiliary = duals ? dualCell(state, 'u', i) : penalties ? penaltyCell(state, 'row', i) : '';
+    return `<tr><th scope="row" class="${emphasis(state, 'row', i)}">S${i + 1}</th>
+      ${cells}<td class="margin${working}">${supplyMargin[i]}</td>${auxiliary}</tr>`;
+  }).join('');
+  const demands = demandMargin.map((value, j) => {
+    const working = allocating && state.selected?.[1] === j ? ' working-margin' : '';
+    return `<td class="margin${working}">${value}</td>`;
+  }).join('');
+  const corner = extra ? '<td></td>' : '';
+  const auxiliaryType = duals ? 'dual' : 'penalty';
+  const auxiliaryHeading = extra ? `<th scope="col" class="auxiliary ${auxiliaryType}">${label}</th>` : '';
+  const auxiliaryRow = extra
+    ? `<tr><th scope="row" class="auxiliary ${auxiliaryType}">${label}</th>${
+        demand.map((_, j) => duals ? dualCell(state, 'v', j) : penaltyCell(state, 'column', j)).join('')
+      }<td></td><td></td></tr>`
+    : '';
+  return `<colgroup><col class="source"><col span="4"><col class="supply">${extra ? '<col class="auxiliary">' : ''}</colgroup>
+    <thead><tr><th scope="col">Source</th>${headers}<th scope="col" class="margin">${allocating ? 'Supply left' : 'Supply'}</th>${auxiliaryHeading}</tr></thead>
+    <tbody>${rows}</tbody><tfoot>
+      <tr><th scope="row" class="margin">${allocating ? 'Demand left' : 'Demand'}</th>${demands}<td class="margin"></td>${corner}</tr>
+      ${auxiliaryRow}
+    </tfoot>`;
+}
+
+function drawStrikes() {
+  const state = states[index];
+  const allocating = state.phase === 'Build the shipping plan';
+  const hasStrikes = allocating && (state.supply.includes(0) || state.demand.includes(0));
+  byId('stroke-key').hidden = !hasStrikes;
+  strikes.replaceChildren();
+  if (!hasStrikes) return;
+
+  const origin = strikes.getBoundingClientRect();
+  const rows = [...table.tBodies[0].rows].map(row => [...row.querySelectorAll('.cell')]);
+  const columns = rows[0].length;
+  const topLeft = rows[0][0].getBoundingClientRect();
+  const bottomRight = rows.at(-1).at(-1).getBoundingClientRect();
+
+  function addStroke(direction, left, top, length) {
+    const stroke = document.createElement('span');
+    stroke.className = `stroke ${direction}-stroke`;
+    stroke.style.left = `${left - origin.left}px`;
+    stroke.style.top = `${top - origin.top}px`;
+    const size = direction === 'row' ? 'width' : 'height';
+    stroke.style[size] = `${length}px`;
+    strikes.append(stroke);
+  }
+
+  rows.forEach((row, i) => {
+    if (state.supply[i] !== 0) return;
+    const cell = row[0].getBoundingClientRect();
+    addStroke('row', topLeft.left, cell.top + cell.height / 2, bottomRight.right - topLeft.left);
+  });
+  for (let j = 0; j < columns; j++) {
+    if (state.demand[j] !== 0) continue;
+    const cell = rows[0][j].getBoundingClientRect();
+    addStroke('column', cell.left + cell.width / 2, topLeft.top, bottomRight.bottom - topLeft.top);
+  }
+}
+
+function render() {
+  const state = states[index];
+  byId('phase').textContent = state.phase;
+  byId('step').textContent = `Step ${index + 1} / ${states.length}`;
+  table.innerHTML = tableMarkup(state);
+  const showEquations = Boolean(state.equations.length);
+  workspace.classList.toggle('with-equations', showEquations);
+  equations.hidden = !showEquations;
+  byId('equations').innerHTML = state.equations.map(([i, j, cost]) => {
+    const active = state.equation?.[0] === i && state.equation?.[1] === j;
+    return `<li class="${active ? 'active' : ''}">u<sub>${i + 1}</sub> + v<sub>${j + 1}</sub> = ${cost}</li>`;
+  }).join('');
+  byId('rc-key').hidden = !state.rc.some(row => row.some(value => value !== null));
+  byId('explanation-title').innerHTML = state.title;
+  const note = state.note ? `<p>${state.note}</p>` : '';
+  byId('explanation-body').innerHTML = `<p>${state.body}</p>${note}`;
+  document.querySelector('main').classList.toggle('result', state.phase === 'Result');
+  previous.disabled = index === 0;
+  next.disabled = index === states.length - 1;
+  presentation.scrollTop = 0;
+  drawStrikes();
+}
+
+function advance(delta) {
+  const target = index + delta;
+  if (target < 0 || target >= states.length) return;
+  index = target;
+  render();
+}
+
+function fitViewport() {
+  const frame = window.frameElement;
+  if (!frame) return;
+  const footerSpace = window.parent.frameElement?.title === 'streamlitApp' ? 56 : 0;
+  const height = Math.floor(window.parent.innerHeight - frame.getBoundingClientRect().top - 12 - footerSpace);
+  if (height <= 0) return;
+  frame.style.setProperty('height', height + 'px', 'important');
+  frame.closest('[data-testid="stElementContainer"]')?.style.setProperty('height', height + 'px', 'important');
+}
+
+previous.addEventListener('click', () => advance(-1));
+next.addEventListener('click', () => advance(1));
+document.addEventListener('keydown', event => {
+  if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+  event.preventDefault();
+  advance(event.key === 'ArrowLeft' ? -1 : 1);
+});
+window.addEventListener('resize', fitViewport);
+if (window.frameElement) {
+  const frame = window.frameElement;
+  const observer = new ResizeObserver(() => {
+    if (frame.isConnected) requestAnimationFrame(fitViewport);
+    else observer.disconnect();
+  });
+  observer.observe(window.parent.document.querySelector('.stMain') || frame);
+}
+render();
+new ResizeObserver(drawStrikes).observe(table);
+requestAnimationFrame(fitViewport);
+</script>
+</body>
+</html>

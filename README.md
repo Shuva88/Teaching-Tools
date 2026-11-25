@@ -84,6 +84,15 @@ optimality explanation retains the final tableau and graph. A separate final
 Key takeaways state follows. These are reviewed teaching choices, not layouts
 to replace automatically with a generic Results screen.
 
+### Transportation Problem - Example 1
+
+The warehouse-to-store shipping example offers the Northwest Corner Rule, Least Cost Method,
+and Vogel’s Approximation Method. Each walkthrough builds the starting solution
+in the tableau, then derives the dual variables and checks every nonbasic
+reduced cost. The test certifies the VAM cost of 1,020 as optimal for this example.
+The app embeds the problem data. Local source slides in `My Teaching Materials/`
+are excluded from Git.
+
 ## Project structure
 
 ```text
@@ -95,13 +104,16 @@ Teaching-Tools/
 |   |-- consecutive_days_off.py
 |   |-- johnson.py
 |   |-- simplex.py
-|   `-- single_processor.py
+|   |-- single_processor.py
+|   `-- transportation.py
 |-- components/
 |   |-- clarke_wright.py
 |   |-- gantt.py
 |   |-- simplex.py
 |   |-- single_processor_gantt.py
-|   `-- staffing.py
+|   |-- staffing.py
+|   |-- transportation.py
+|   `-- transportation_player.html
 |-- pages/
 |   |-- clarke_wright.py
 |   |-- consecutive_days_off.py
@@ -109,13 +121,15 @@ Teaching-Tools/
 |   |-- johnson_rule.py
 |   |-- operations_research_home.py
 |   |-- simplex_algorithm.py
-|   `-- single_processor_sequencing.py
+|   |-- single_processor_sequencing.py
+|   `-- transportation_problem_example_1.py
 |-- tests/
 |   |-- test_clarke_wright.py
 |   |-- test_consecutive_days_off.py
 |   |-- test_johnson.py
 |   |-- test_simplex.py
-|   `-- test_single_processor.py
+|   |-- test_single_processor.py
+|   `-- test_transportation.py
 |-- CLASSROOM_DISPLAY_GUIDELINES.md
 |-- requirements.txt
 `-- README.md
@@ -147,6 +161,7 @@ To use the Simplex review port without activating the virtual environment:
 ```
 
 Open [the local Simplex page](http://localhost:8502/simplex_algorithm).
+Open [the local Transportation Example 1 page](http://localhost:8502/transportation_problem_example_1).
 
 Use the sidebar navigation to switch between demonstrations. All pages are
 fixed demonstration mode: there are no editable inputs, quizzes, downloads, or
@@ -169,6 +184,7 @@ Operations Research:
 
 - [Operations Research homepage](https://operationsmanagement.streamlit.app/operations_research)
 - [Simplex Algorithm - Example 1](https://operationsmanagement.streamlit.app/simplex_algorithm)
+- [Transportation Problem - Example 1](https://operationsmanagement.streamlit.app/transportation_problem_example_1)
 
 ## Release and display controls
 
