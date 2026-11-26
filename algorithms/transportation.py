@@ -1,9 +1,11 @@
-"""Exact arithmetic for the balanced Powerco classroom example."""
+"""Exact arithmetic for the balanced transportation examples."""
 
+from collections import deque
 from dataclasses import dataclass
 
 
 COSTS = ((8, 6, 10, 9), (9, 12, 13, 7), (14, 9, 16, 5))
+VARIANT_COSTS = ((8, 6, 10, 9), (9, 12, 13, 5), (14, 9, 16, 5))
 SUPPLY = (35, 50, 40)
 DEMAND = (45, 20, 30, 30)
 METHODS = {
@@ -51,6 +53,14 @@ class Potential:
     known: int
 
 
+@dataclass(frozen=True)
+class Pivot:
+    cycle: tuple[Cell, ...]
+    delta: int
+    leaving: Cell
+    updated: Matrix
+
+
 def _most_units(cells, supply, demand) -> Cell:
     return min(cells, key=lambda cell: (-min(supply[cell[0]], demand[cell[1]]), cell))
 
@@ -75,11 +85,14 @@ def choose_cell(method, costs, supply, demand) -> Allocation:
         penalties = tuple(_penalty(axis, index, cells, costs) for axis, index, cells in lines)
         maximum = max(p.difference for p in penalties)
         tied_lines = tuple(p for p in penalties if p.difference == maximum)
-        line = min(tied_lines, key=lambda p: p.low)
-        candidates = line.cheapest
+        lowest_cost = min(p.low for p in tied_lines)
+        lowest_cost_lines = [p for p in tied_lines if p.low == lowest_cost]
+        candidates = tuple(sorted({cell for p in lowest_cost_lines for cell in p.cheapest}))
     else:
         raise ValueError(f"Unknown transportation method: {method}")
     i, j = _most_units(candidates, supply, demand)
+    if tied_lines:
+        line = next(p for p in lowest_cost_lines if (i, j) in p.cheapest)
     return Allocation(
         (i, j), min(supply[i], demand[j]), tuple(supply), tuple(demand),
         candidates, penalties, tied_lines, line, forced,
@@ -91,13 +104,13 @@ def _penalty(axis, index, cells, costs) -> Penalty:
     return Penalty(axis, index, low, second, tuple((i, j) for i, j in cells if costs[i][j] == low))
 
 
-def initial_solution(method: str) -> tuple[tuple[Allocation, ...], Matrix]:
+def initial_solution(method: str, costs: Matrix = COSTS) -> tuple[tuple[Allocation, ...], Matrix]:
     """Build a starting solution for the fixed balanced, nondegenerate example."""
     supply, demand = list(SUPPLY), list(DEMAND)
     allocations = [[0 for _ in DEMAND] for _ in SUPPLY]
     decisions = []
     while any(supply):
-        decision = choose_cell(method, COSTS, supply, demand)
+        decision = choose_cell(method, costs, supply, demand)
         i, j = decision.cell
         allocations[i][j] = decision.amount
         supply[i] -= decision.amount
@@ -142,3 +155,44 @@ def reduced_costs(costs: Matrix, basis: tuple[Cell, ...], u, v) -> dict[Cell, in
         for i, row in enumerate(costs) for j, cost in enumerate(row)
         if (i, j) not in basic
     }
+
+
+def improving_pivot(allocations: Matrix, rc: dict[Cell, int]) -> Pivot | None:
+    """Pivot the fixed, nondegenerate classroom basis at its most negative reduced cost."""
+    entering = min(rc, key=lambda cell: (rc[cell], cell))
+    if rc[entering] >= 0:
+        return None
+    basis = basis_cells(allocations)
+    cycle = (entering, *_basic_path(basis, entering))
+    donors = cycle[1::2]
+    leaving = min(donors, key=lambda cell: (allocations[cell[0]][cell[1]], cell))
+    delta = allocations[leaving[0]][leaving[1]]
+    updated = [list(row) for row in allocations]
+    for k, (i, j) in enumerate(cycle):
+        updated[i][j] += delta if k % 2 == 0 else -delta
+    result = tuple(tuple(row) for row in updated)
+    if len(basis_cells(result)) != len(basis):
+        raise ValueError("This demonstration requires a nondegenerate UV pivot.")
+    return Pivot(cycle, delta, leaving, result)
+
+
+def _basic_path(basis: tuple[Cell, ...], entering: Cell) -> tuple[Cell, ...]:
+    """Find the tree path from the entering cell's column back to its row."""
+    start, finish = ("D", entering[1]), ("S", entering[0])
+    neighbors = {}
+    for i, j in basis:
+        row, column = ("S", i), ("D", j)
+        neighbors.setdefault(row, []).append((column, (i, j)))
+        neighbors.setdefault(column, []).append((row, (i, j)))
+    pending = deque([(start, ())])
+    visited = {start}
+    while pending:
+        node, path = pending.popleft()
+        if node == finish:
+            return path
+        for neighbor, cell in neighbors.get(node, ()):
+            if neighbor in visited:
+                continue
+            visited.add(neighbor)
+            pending.append((neighbor, (*path, cell)))
+    raise ValueError("A connected basic solution must give a path for the entering cell.")

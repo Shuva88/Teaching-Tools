@@ -66,3 +66,19 @@ with columns[1]:
         icon="➡️",
         width="stretch",
     )
+with columns[2]:
+    st.markdown(
+        """
+<div class="home-tool-card">
+  <h3>Transportation Problem - Example 2</h3>
+  <p>Start with Vogel’s method, then follow two UV iterations involving loops, donor limits, and changes in total cost.</p>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+    st.page_link(
+        "pages/transportation_problem_example_2.py",
+        label="Open Transportation Problem - Example 2",
+        icon="➡️",
+        width="stretch",
+    )

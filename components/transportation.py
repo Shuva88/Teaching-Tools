@@ -6,8 +6,8 @@ from json import dumps
 from pathlib import Path
 
 from algorithms.transportation import (
-    COSTS, DEMAND, METHODS, SUPPLY, basis_cells, initial_solution, reduced_costs,
-    solve_potentials,
+    COSTS, DEMAND, METHODS, SUPPLY, VARIANT_COSTS, basis_cells, improving_pivot,
+    initial_solution, reduced_costs, solve_potentials,
 )
 
 
@@ -43,9 +43,8 @@ def _forced_prompt(decision, show_other_case):
     return prompt + other if show_other_case else prompt
 
 
-def _choice_explanation(method, decision):
+def _choice_explanation(method, decision, unit_cost):
     cell = _cell_label(decision.cell)
-    i, j = decision.cell
     if method == "NWCR":
         return f"Cell {cell} is the top-left (north-west) cell with supply and demand left."
     if decision.forced:
@@ -55,7 +54,7 @@ def _choice_explanation(method, decision):
         )
     details = []
     if method == "LCM":
-        details.append(f"The lowest available unit cost is {COSTS[i][j]}.")
+        details.append(f"The lowest available unit cost is {unit_cost}.")
     else:
         largest = decision.line
         label = _row_or_column(largest)
@@ -65,21 +64,48 @@ def _choice_explanation(method, decision):
             f"The lowest unit cost there is {largest.low}."
         )
         if len(decision.tied_lines) > 1:
-            candidates = ", ".join(f"{_row_or_column(p)} (lowest cost {p.low})" for p in decision.tied_lines)
-            reason = ("Choose the row or column with the lowest available cost." if
-                      sum(p.low == largest.low for p in decision.tied_lines) == 1 else
-                      "If the lowest costs also tie, check rows from top to bottom, then columns from left to right.")
-            details.append(f"Rows or columns with equal penalties: {candidates}. {reason}")
+            labels = [_row_or_column(p) for p in decision.tied_lines]
+            names = f"{', '.join(labels[:-1])} and {labels[-1]}"
+            costs = [f"₹{p.low}" for p in decision.tied_lines]
+            described_costs = f"{', '.join(costs[:-1])} and {costs[-1]}, respectively"
+            if len(set(costs)) == 1:
+                described_costs = f"{costs[0]} in each case"
+            details = [
+                f"{names[0].upper() + names[1:]} tie for the largest penalty of {largest.difference}. "
+                f"Their lowest unit costs are {described_costs}."
+            ]
+            if len(decision.candidates) == 1:
+                details.append(f"Choose {label} because it has the lowest available cost.")
     if len(decision.candidates) > 1:
-        amounts = {cell: min(decision.supply_before[cell[0]], decision.demand_before[cell[1]])
-                   for cell in decision.candidates}
+        amounts = {
+            candidate: min(decision.supply_before[candidate[0]], decision.demand_before[candidate[1]])
+            for candidate in decision.candidates
+        }
+        leaders = [candidate for candidate, amount in amounts.items() if amount == decision.amount]
+        if method == "VAM":
+            prefix = "At that cost," if len(decision.tied_lines) > 1 else "At the same lowest unit cost,"
+            if len(leaders) == len(amounts) == 2:
+                first, second = map(_cell_label, amounts)
+                details.append(f"{prefix} {first} and {second} can each take {decision.amount} cartons.")
+            else:
+                sizes = [f"{_cell_label(candidate)} can take {amount} cartons" for candidate, amount in amounts.items()]
+                details.append(f"{prefix} {', '.join(sizes[:-1])} and {sizes[-1]}.")
+            if len(leaders) == 1:
+                details.append(f"Choose {cell} because it permits the largest allocation.")
+            else:
+                position = "leftmost" if all(i == decision.cell[0] for i, _ in leaders) else "topmost"
+                details.append(
+                    f"Choose {cell}, the {position} candidate, as per our tie breaking convention."
+                )
+            return " ".join(details)
         sizes = ", ".join(f"{_cell_label(cell)} ({amount} cartons)" for cell, amount in amounts.items())
-        reason = ("Choose the cell where we can allocate more cartons." if
-                  sum(amount == decision.amount for amount in amounts.values()) == 1 else
-                  "If the amounts also tie, scan each row from left to right, starting at the top.")
-        details.append(f"Equal-cost cells: {sizes}. {reason}")
+        if len(leaders) == 1:
+            reason = "Choose the cell where we can allocate the most cartons."
+        else:
+            reason = "If the amounts also tie, scan each row from left to right, starting at the top."
+        details.append(f"Possible allocations for equal-cost cells are {sizes}. {reason}")
     details.append(f"Select cell {cell}.")
-    if len(decision.candidates) > 1 or len(decision.tied_lines) > 1:
+    if len(decision.candidates) > 1:
         details.append("Picking a different tied cell can give a different starting allocation.")
     return " ".join(details)
 
@@ -91,23 +117,21 @@ def _penalties(decision):
     ]
 
 
-@lru_cache(maxsize=len(METHODS))
-def build_states(method: str) -> tuple[dict, ...]:
-    decisions, final = initial_solution(method)
+@lru_cache(maxsize=len(METHODS) + 1)
+def build_states(method: str, example: int = 1) -> tuple[dict, ...]:
+    cost_matrix = COSTS if example == 1 else VARIANT_COSTS
+    decisions, final = initial_solution(method, cost_matrix)
     states = []
     grid = [[0 for _ in DEMAND] for _ in SUPPLY]
     supply, demand = list(SUPPLY), list(DEMAND)
-    u, v = [None] * len(SUPPLY), [None] * len(DEMAND)
-    rc = [[None for _ in DEMAND] for _ in SUPPLY]
-    equations = ()
     phase = "Build the shipping plan"
 
     def add(title, body, **marks):
         states.append(dict(
             title=title, body=body, phase=phase, grid=[row[:] for row in grid],
-            supply=supply[:], demand=demand[:], u=u[:], v=v[:], rc=[row[:] for row in rc],
-            equations=equations, **marks,
-        ))
+            supply=supply[:], demand=demand[:], u=[None] * len(SUPPLY), v=[None] * len(DEMAND),
+            rc=[[None for _ in DEMAND] for _ in SUPPLY], equations=(),
+        ) | marks)
 
     prompts = {
         "NWCR": "Find the top-left (north-west) cell where the warehouse still has cartons "
@@ -116,20 +140,34 @@ def build_states(method: str) -> tuple[dict, ...]:
         "VAM": "Which row or column has the greatest penalty, and which cell in it is cheapest?",
     }
     openings = {
-        "NWCR": "In this method, we start at the top-left (north-west) cell.",
-        "LCM": "In this method, we start with the cheapest cell.",
+        "NWCR": "In NWCR, we start at the top-left (north-west) cell.",
+        "LCM": "In LCM, we start with the cheapest cell.",
     }
     if method == "VAM":
-        example = decisions[0].penalties[0]
+        penalty_example = decisions[0].penalties[0]
         add(
             "What does a penalty tell us?",
-            "In this method, we use penalties to decide which row or column to work on first. "
+            "In VAM, we use penalties to decide which row or column to work on first. "
             "The penalty is the difference between its two lowest available unit costs. "
-            f"In S1, that is {example.second} − {example.low} = {example.difference}. "
+            f"In S1, that is {penalty_example.second} − {penalty_example.low} = {penalty_example.difference}. "
             f"If the cheapest cell in S1 becomes unavailable, the next cheapest costs "
-            f"₹{example.difference} more per carton.",
+            f"₹{penalty_example.difference} more per carton.",
             penalties=_penalties(decisions[0]),
         )
+        if example == 2:
+            add(
+                "How do we break a VAM tie?",
+                "<strong>Penalty tie:</strong> Among the tied rows or columns, identify the cell(s) "
+                "with the lowest available transportation cost."
+                "<br><strong>Cost tie:</strong> If multiple candidate cells have the same lowest cost, "
+                "choose the one that permits the largest allocation. This applies both across tied "
+                "rows or columns and within a selected row or column."
+                "<br><strong>Allocation tie:</strong> If the possible allocations also tie, choose the "
+                "topmost candidate and then the leftmost if needed.",
+                penalties=_penalties(decisions[0]),
+                note="These are tie-breaking conventions. Different choices may lead to different "
+                     "initial basic feasible solutions and transportation costs.",
+            )
     first_forced = True
     for index, decision in enumerate(decisions, 1):
         i, j = decision.cell
@@ -144,10 +182,14 @@ def build_states(method: str) -> tuple[dict, ...]:
             title = f"Allocation {index} · How do we start?"
             prompt = f"{openings[method]} Which cell is that?"
         add(title, prompt, penalties=penalties)
+        compare_amounts = method == "VAM" and len(decision.candidates) > 1
+        question = (
+            "" if compare_amounts else
+            f" <strong>How many cartons can we ship with {supply[i]} available and {demand[j]} needed?</strong>"
+        )
         add(
-            f"How much can we allocate to cell {cell}?",
-            f"{_choice_explanation(method, decision)} "
-            f"<strong>How many cartons can we ship with {supply[i]} available and {demand[j]} needed?</strong>",
+            f"Why choose cell {cell}?" if compare_amounts else f"How much can we allocate to cell {cell}?",
+            _choice_explanation(method, decision, cost_matrix[i][j]) + question,
             penalties=penalties, selected=decision.cell, candidates=decision.candidates,
             lines=[(p.axis, p.index) for p in decision.tied_lines],
             selected_line=(decision.line.axis, decision.line.index) if decision.line else None,
@@ -171,33 +213,87 @@ def build_states(method: str) -> tuple[dict, ...]:
             selected=decision.cell, note=note,
         )
 
-    basis = basis_cells(final)
-    total = sum(COSTS[i][j] * final[i][j] for i, j in basis)
-    products = " + ".join(f"{COSTS[i][j]} × {final[i][j]}" for i, j in basis)
     phase = "Optimality test"
+    products, total = _cost_calculation(cost_matrix, final)
     add(
         "Can we lower the total cost?",
         f"All supply and demand are met. Total cost = {products} = <strong>{total:,}</strong>. "
         "We now check whether this plan is optimal.",
     )
-    equations = tuple((i, j, COSTS[i][j]) for i, j in basis)
-    add(
+    iteration = 0
+    while True:
+        costs = _add_optimality(add, cost_matrix, final, example, first_test=iteration == 0)
+        panel = {key: states[-1][key] for key in ("equations", "u", "v", "rc")}
+        pivot = improving_pivot(final, costs) if example == 2 else None
+        if pivot is None:
+            break
+
+        iteration += 1
+        phase = f"Iteration {iteration}"
+        total = _add_uv_steps(add, cost_matrix, final, costs, pivot, total, panel, iteration)
+        final = pivot.updated
+        grid = final
+        phase = f"Optimality test after iteration {iteration}"
+
+    phase = "Result"
+    if any(value < 0 for value in costs.values()):
+        add(
+            "The current allocation is not optimal",
+            f"The presence of a negative reduced cost tells us that we can lower the current total cost "
+            f"of <strong>₹{total:,}</strong>. We can do this by allocating cartons to a cell with a "
+            "negative reduced cost and adjusting the other allocations so that supply and demand are still met.",
+            **panel,
+        )
+    else:
+        title = ("The VAM solution is optimal for this example" if example == 1
+                 else f"The solution is optimal after {iteration} UV iterations")
+        zero_cell = next((cell for cell, value in costs.items() if value == 0), None)
+        note = ""
+        if example == 2 and zero_cell is not None:
+            variable = _var("x", *zero_cell)
+            note = (
+                f"<strong>Note.</strong> The non-basic variable {variable} in cell "
+                f"{_cell_label(zero_cell)} has zero reduced cost. "
+                f"Allocating one carton to this cell and adjusting the other allocations leaves the total cost unchanged. "
+                f"Another UV iteration with {variable} entering the basis would thus give an alternate optimal solution."
+            )
+        add(
+            title,
+            f"None of the reduced costs is negative, so the current plan has the lowest possible cost "
+            f"of <strong>₹{total:,}</strong>.",
+            note=note, **panel,
+        )
+    return tuple(states)
+
+
+def _add_optimality(add, cost_matrix, allocations, example, *, first_test):
+    basis = basis_cells(allocations)
+    equations = tuple((i, j, cost_matrix[i][j]) for i, j in basis)
+    u, v = [None] * len(SUPPLY), [None] * len(DEMAND)
+    rc = [[None for _ in DEMAND] for _ in SUPPLY]
+
+    def show(title, body, **marks):
+        add(title, body, u=u[:], v=v[:], rc=[row[:] for row in rc], equations=equations, **marks)
+
+    show(
         "Write an equation for each basic cell",
         "In a transportation problem, each basic cell gives one equation, "
         "<strong>u<sub>i</sub> + v<sub>j</sub> = c<sub>ij</sub></strong>. "
         "In words, the row and column dual variables add up to the unit cost of that cell. "
         "Six independent equations leave one "
-        "of the seven values free. We can fix it to find one of infinitely many solutions.",
+        "of the seven values free. So, we can fix one of the values (to say 0) "
+        "to find one of infinitely many solutions.",
     )
     u[0] = 0
-    add(
+    show(
         "Let us set u₁ = 0",
         "Any of the seven variables can be set to zero. A useful shortcut is to pick one "
         "that appears most often, so more equations can be solved right away. Here we start "
-        "with u<sub>1</sub> for consistency across the three methods.",
+        + ("with u<sub>1</sub> for consistency across the three methods." if example == 1
+           else "with u<sub>1</sub> again." if not first_test else "with u<sub>1</sub>, as in Example 1."),
         highlighted_duals=[("u", 0)],
     )
-    solved_u, solved_v, moves = solve_potentials(COSTS, basis)
+    solved_u, solved_v, moves = solve_potentials(cost_matrix, basis)
     for move in moves:
         i, j = move.cell
         target = _var(move.axis, move.index)
@@ -205,15 +301,15 @@ def build_states(method: str) -> tuple[dict, ...]:
         margin = u if move.axis == "u" else v
         margin[move.index] = move.value
         equation_number = basis.index(move.cell) + 1
-        add(
+        show(
             f"Find {target} from cell {_cell_label(move.cell)}",
             f"Using {known} = {_number(move.known)} in equation {equation_number}, "
             f"we get <strong>{target} = {_number(move.value)}</strong>.",
             selected=move.cell, equation=move.cell, highlighted_duals=[("u", i), ("v", j)],
         )
 
-    costs = reduced_costs(COSTS, basis, solved_u, solved_v)
-    add(
+    costs = reduced_costs(cost_matrix, basis, solved_u, solved_v)
+    show(
         "How do we find the reduced cost of a cell with no allocation?",
         "In a transportation problem, the reduced cost of a non-basic variable is the cell’s unit cost "
         "minus the sum of its row and column dual variables. In symbols, "
@@ -223,42 +319,164 @@ def build_states(method: str) -> tuple[dict, ...]:
     for cell, value in costs.items():
         i, j = cell
         rc[i][j] = value
-        add(
+        show(
             f"Compute the reduced cost for cell {_cell_label(cell)}",
-            f"<strong>{_var('RC', i, j)} = {COSTS[i][j]} − "
+            f"<strong>{_var('RC', i, j)} = {cost_matrix[i][j]} − "
             f"({_number(u[i])} + {_number(v[j])}) = {_number(value)}</strong>. "
             f"Allocating one carton to this cell and adjusting the other allocations would "
             f"{'lower' if value < 0 else 'raise'} total cost by ₹{abs(value)}."
-            if value else f"{_var('RC', i, j)} = 0. The corresponding adjustment leaves total cost unchanged.",
+            if value else
+            f"<strong>{_var('RC', i, j)} = {cost_matrix[i][j]} − "
+            f"({_number(u[i])} + {_number(v[j])}) = 0</strong>. "
+            f"The non-basic variable {_var('x', i, j)} has zero reduced cost. "
+            "Allocating one carton to this cell and adjusting the other allocations leaves total cost unchanged.",
             selected=cell, highlighted_duals=[("u", i), ("v", j)],
             note=(
                 "<strong>Note.</strong> Setting a different dual variable to zero initially would give "
                 "different values for u<sub>i</sub> and v<sub>j</sub>. However, for the same allocation, "
                 "their sum in each cell stays the same, so every reduced cost computed stays the same too."
-                if cell == last_cell else ""
+                if first_test and cell == last_cell else ""
             ),
         )
-    phase = "Result"
-    if any(value < 0 for value in costs.values()):
-        add(
-            "The current allocation is not optimal",
-            f"The presence of a negative reduced cost tells us that we can lower the current total cost "
-            f"of <strong>₹{total:,}</strong>. We can do this by allocating cartons to a cell with a "
-            "negative reduced cost and adjusting the other allocations so that supply and demand are still met.",
-        )
+    return costs
+
+
+def _cost_calculation(cost_matrix, allocations):
+    basis = basis_cells(allocations)
+    terms = " + ".join(f"{cost_matrix[i][j]} × {allocations[i][j]}" for i, j in basis)
+    total = sum(cost_matrix[i][j] * allocations[i][j] for i, j in basis)
+    return terms, total
+
+
+def _add_uv_steps(add, cost_matrix, allocations, costs, pivot, total, panel, iteration):
+    cycle = pivot.cycle
+    entering = cycle[0]
+    label = _cell_label(entering)
+    entering_var = _var("x", *entering)
+    leaving_var = _var("x", *pivot.leaving)
+    rc = costs[entering]
+    add(
+        "Which non-basic variable should enter?",
+        "A negative reduced cost tells us that the current allocation can be improved. "
+        "Which cell gives the greatest drop in total cost per additional carton?",
+        **panel,
+    )
+    add(
+        f"{entering_var} enters the basis",
+        f"Cell {label} corresponds to {entering_var}. Its reduced cost of "
+        f"<strong>{_number(rc)}</strong> is the most negative. "
+        "Let δ be the number of cartons added to this cell. Which other allocations must change "
+        "so that each row still matches its supply and each column still matches its demand?",
+        selected=entering, **panel,
+    )
+    moves = [_loop_move(previous, current, index)
+             for index, (previous, current) in enumerate(zip(cycle, cycle[1:]), 1)]
+    add(
+        "Start the loop and mark the first two turns",
+        f"Start at {label} with (+), meaning its allocation will increase by δ cartons.<br>{moves[0]}",
+        note=moves[1], cycle=cycle[:3], cycle_closed=False, **panel,
+    )
+    add(
+        "Continue alternating directions and signs",
+        moves[2], note=moves[3], cycle=cycle[:5], cycle_closed=False, **panel,
+    )
+    add(
+        "Close the loop",
+        f"{moves[4]} Move {_loop_direction(cycle[-1], entering)} along row S{entering[0] + 1} "
+        f"to return to {label}.",
+        note="Each affected row and column gains and loses δ cartons, so its total stays the same. "
+             "Tracing these cells in the opposite direction gives the same loop and the same signs.",
+        cycle=cycle, **panel,
+    )
+    i, j = next(cell for cell in basis_cells(allocations) if cell not in cycle)
+    junction = min((cell for cell in cycle if cell[0] == i), key=lambda cell: abs(cell[1] - j))
+    add(
+        "Why is this the only loop?",
+        f"Suppose we move {_loop_direction(junction, (i, j))} from {_cell_label(junction)} to "
+        f"{_cell_label((i, j))}, as shown by the red dashed line. "
+        f"We would then have to turn vertically in column D{j + 1}, "
+        "but that column has no other allocated cell. This path gets stuck.",
+        note=f"<strong>Note.</strong> This is the only loop for {label}. It starts at a non-basic "
+             "cell and turns only at basic cells, which are the cells with allocations in this example.",
+        trial=(junction, (i, j)), cycle=cycle, **panel,
+    )
+    add(
+        "How large can δ be?",
+        "Each donor cell loses δ cartons. None can drop below zero, so the smallest of the "
+        "donor allocations limits the increase in the entering cell.",
+        cycle=pivot.cycle, **panel,
+    )
+    donors = ", ".join(str(allocations[i][j]) for i, j in cycle[1::2])
+    leaving_cell = _cell_label(pivot.leaving)
+    add(
+        f"Set δ = {pivot.delta}",
+        f"The donor cells hold {donors} cartons. The smallest amount is <strong>{pivot.delta}</strong>. "
+        f"That amount is in the highlighted cell {leaving_cell}.<br>"
+        f"As the allocation in cell {label} ({entering_var}) increases by {pivot.delta} cartons, "
+        f"the allocation in donor cell {leaving_cell} ({leaving_var}) falls to zero. "
+        f"Thus, {leaving_var} leaves the basis.",
+        selected=pivot.leaving, cycle=pivot.cycle, **panel,
+    )
+    decrease = -rc * pivot.delta
+    terms, new_total = _cost_calculation(cost_matrix, pivot.updated)
+    add(
+        f"Update the allocations by δ = {pivot.delta}",
+        f"Add {pivot.delta} at every (+) and subtract {pivot.delta} at every (−). "
+        f"The cost falls by <strong>₹{decrease:,}</strong> because each of the {pivot.delta} "
+        f"cartons added to {label} lowers cost by ₹{-rc}. "
+        f"New total = ₹{total:,} − ({pivot.delta} × ₹{-rc}) = <strong>₹{new_total:,}</strong>."
+        + (" We now have a new basic feasible solution." if iteration == 1 else ""),
+        grid=pivot.updated, cycle=pivot.cycle,
+    )
+    next_test = (
+        "That completes the first iteration. We now check whether this plan is optimal. "
+        "Let’s begin the second by finding the dual "
+        "variables for the updated allocation and checking its reduced costs."
+        if iteration == 1
+        else "Let’s find the new dual variables and check the reduced costs again. "
+             "Is this allocation optimal?"
+    )
+    add(
+        "Verify the new total cost",
+        f"Multiply each unit cost by its new allocation. {terms} = <strong>₹{new_total:,}</strong>.",
+        note=next_test,
+        grid=pivot.updated,
+    )
+    return new_total
+
+
+def _loop_direction(previous, current):
+    if previous[0] == current[0]:
+        return "left" if current[1] < previous[1] else "right"
+    return "up" if current[0] < previous[0] else "down"
+
+
+def _loop_move(previous, current, index):
+    i, j = current
+    if previous[0] == i:
+        line = f"row S{i + 1}"
+        balance = f"S{i + 1} must still ship {SUPPLY[i]} cartons"
     else:
-        add(
-            "The VAM solution is optimal for this example",
-            f"None of the reduced costs is negative, so the current plan has the lowest possible cost "
-            f"of <strong>₹{total:,}</strong>.",
-        )
-    return tuple(states)
+        line = f"column D{j + 1}"
+        balance = f"D{j + 1} must still receive {DEMAND[j]} cartons"
+    subtracting = index % 2
+    adjustment = "subtract" if subtracting else "add"
+    sign = "−" if subtracting else "+"
+    return (
+        f"{balance}, so we need to {adjustment} δ cartons at another allocated cell in {line}. "
+        f"Move {_loop_direction(previous, current)} to {_cell_label(current)} and mark ({sign})."
+    )
 
 
-def landing_tableau() -> str:
+def page_style(started: bool) -> str:
+    css = Path(__file__).with_name("transportation_page.css").read_text(encoding="utf-8")
+    return f"<style>{css.replace('__OVERFLOW__', 'clip' if started else 'auto')}</style>"
+
+
+def landing_tableau(cost_matrix=COSTS) -> str:
     headers = "".join(f'<th scope="col">D{j + 1}</th>' for j in range(len(DEMAND)))
     rows = []
-    for i, costs in enumerate(COSTS):
+    for i, costs in enumerate(cost_matrix):
         cells = "".join(f'<td>{cost}</td>' for cost in costs)
         rows.append(f'<tr><th scope="row">S{i + 1}</th>{cells}<th>{SUPPLY[i]}</th></tr>')
     demands = "".join(f"<th>{amount}</th>" for amount in DEMAND)
@@ -270,10 +488,13 @@ def landing_tableau() -> str:
     )
 
 
-def playback_html(method: str) -> str:
+def playback_html(method: str, example: int = 1) -> str:
     template = Path(__file__).with_name("transportation_player.html").read_text(encoding="utf-8")
     data = dumps(
-        dict(method=method, costs=COSTS, supply=SUPPLY, demand=DEMAND, states=build_states(method)),
+        dict(
+            method=method, example=example, costs=COSTS if example == 1 else VARIANT_COSTS,
+            supply=SUPPLY, demand=DEMAND, states=build_states(method, example),
+        ),
         ensure_ascii=False,
     ).replace("<", "\\u003c")
     return template.replace("__METHOD__", escape(METHODS[method])).replace("__DATA__", data)

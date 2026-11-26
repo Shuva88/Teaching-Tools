@@ -84,6 +84,15 @@ data needed to explain it.
   students understand.
 - Highlight all current candidates, including ties, before applying the
   decision.
+- Use the course's exact wording when supplied for a decision rule. Check that
+  worked tie states follow the same order of comparisons and explain the
+  decisive comparison once. When the tie comparison already gives the allocation
+  quantity, use that state to explain the choice and the next state to apply it.
+- When building an adjustment loop, explain which supply or demand total must
+  stay fixed before giving the direction of the next move. Keep the quantities
+  that justify the limit visible in the explanation, connect the limiting
+  quantity to its highlighted cell, and pair entering or leaving cells with
+  their variable names. Refer to the color and pattern of any trial path shown.
 - Explain why tied alternatives remain valid and state the deterministic choice
   used by the demonstration.
 - Grey out completed items only after their placement or update has occurred.
@@ -152,6 +161,9 @@ data needed to explain it.
   A previous scroll offset must not leave the heading or controls above the screen.
   Apply overflow rules by view; a scrollable landing page and a bounded playback
   workspace have different requirements.
+  After Restart, check that the landing table, explanatory text, and Start or
+  method controls sit together. The playback iframe's measured height must
+  disappear when returning to the landing view.
 - Use tabs or another staged control for distinct result components instead of
   stacking several large sections vertically.
 

@@ -45,6 +45,11 @@ transportation_example_1 = st.Page(
     title="Transportation Problem - Example 1",
     url_path="transportation_problem_example_1",
 )
+transportation_example_2 = st.Page(
+    "pages/transportation_problem_example_2.py",
+    title="Transportation Problem - Example 2",
+    url_path="transportation_problem_example_2",
+)
 
 operations_research_home = st.Page(
     "pages/operations_research_home.py",
@@ -64,6 +69,7 @@ operations_research_pages = [
     operations_research_home,
     simplex_algorithm,
     transportation_example_1,
+    transportation_example_2,
 ]
 navigation = st.navigation(
     {

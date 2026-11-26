@@ -61,6 +61,17 @@ tbody tr:nth-child(even) td.cell { background: #f5f7fc; }
 .stroke { position: absolute; }
 .row-stroke { border-top: 1.5px dashed var(--strike); }
 .column-stroke { border-left: 1.5px dashed var(--strike); }
+.loop-stroke { border-color: #326bac; }
+.trial-stroke { border-color: #a83043; }
+.pivot-sign {
+  position: absolute; z-index: 2; right: 5px; bottom: 3px;
+  font-size: .78rem; font-weight: 750; background: #fff; padding: 0 2px;
+}
+.recipient { color: #215e48; }
+.donor { color: #a13656; }
+.strike-grid:has(.loop-cell) .reduced {
+  position: relative; z-index: 2; background: inherit; padding: 0 2px;
+}
 .stroke-key { color: #8c3647; }
 .stroke-key::before {
   content: ""; display: inline-block; width: 1.15em; margin-right: .35em;
@@ -117,12 +128,14 @@ button:disabled, #next:disabled { background: #edf1f2; border-color: var(--line)
   .allocation { min-width: 26px; height: 26px; }
   thead th, tfoot th, tfoot td { font-size: .7rem; }
   button { min-height: 44px; }
+  td.loop-cell { height: 76px; }
+  .pivot-sign { right: 1px; bottom: 1px; padding: 0 1px; }
 }
 </style>
 </head>
 <body>
 <main>
-  <header><div><strong>__METHOD__</strong> · <span id="phase"></span></div><span id="step"></span></header>
+  <header><div><strong id="method-name">__METHOD__</strong> · <span id="phase"></span></div><span id="step"></span></header>
   <div class="presentation">
     <div class="workspace">
       <figure>
@@ -135,6 +148,8 @@ button:disabled, #next:disabled { background: #edf1f2; border-color: var(--line)
           <span class="allocation-key">○ Allocation</span>
           <span class="rc-key" id="rc-key" hidden>± Reduced cost</span>
           <span class="stroke-key" id="stroke-key" hidden>No supply or demand left</span>
+          <span class="recipient" id="recipient-key" hidden>(+) Recipient</span>
+          <span class="donor" id="donor-key" hidden>(−) Donor</span>
         </figcaption>
       </figure>
       <section class="equations" aria-labelledby="equation-heading" hidden>
@@ -154,8 +169,9 @@ button:disabled, #next:disabled { background: #edf1f2; border-color: var(--line)
 </main>
 <script type="application/json" id="lesson-data">__DATA__</script>
 <script>
-const {method, costs, supply, demand, states} = JSON.parse(document.getElementById('lesson-data').textContent);
+const {method, example, costs, supply, demand, states} = JSON.parse(document.getElementById('lesson-data').textContent);
 const byId = id => document.getElementById(id);
+const startingMethodName = byId('method-name').textContent;
 const presentation = document.querySelector('.presentation');
 const workspace = document.querySelector('.workspace');
 const equations = document.querySelector('.equations');
@@ -192,6 +208,14 @@ function emphasis(state, axis, index) {
 
 function cellMarkup(state, cost, i, j) {
   const classes = ['cell'];
+  const cycleIndex = (state.cycle || []).findIndex(([row, col]) => row === i && col === j);
+  let sign = '';
+  if (cycleIndex >= 0) {
+    classes.push('loop-cell');
+    sign = cycleIndex % 2 === 0
+      ? '<span class="pivot-sign recipient" aria-label="Recipient">(+)</span>'
+      : '<span class="pivot-sign donor" aria-label="Donor">(−)</span>';
+  }
   if (includesPair(state.candidates, i, j)) classes.push('tied');
   if (state.selected?.[0] === i && state.selected?.[1] === j) classes.push('chosen');
   const allocation = state.grid[i][j];
@@ -199,7 +223,7 @@ function cellMarkup(state, cost, i, j) {
   let center = '';
   if (allocation) center = `<span class="allocation" aria-label="Allocation ${allocation}">${allocation}</span>`;
   if (rc !== null) center = `<span class="reduced" aria-label="Reduced cost ${signed(rc)}">${signed(rc)}</span>`;
-  return `<td class="${classes.join(' ')}"><span class="cost" aria-label="Unit cost ${cost}">${cost}</span>${center}</td>`;
+  return `<td class="${classes.join(' ')}"><span class="cost" aria-label="Unit cost ${cost}">${cost}</span>${center}${sign}</td>`;
 }
 
 function tableMarkup(state) {
@@ -240,13 +264,16 @@ function tableMarkup(state) {
     </tfoot>`;
 }
 
-function drawStrikes() {
+function drawGuides() {
   const state = states[index];
   const allocating = state.phase === 'Build the shipping plan';
   const hasStrikes = allocating && (state.supply.includes(0) || state.demand.includes(0));
+  const cycle = state.cycle || [];
   byId('stroke-key').hidden = !hasStrikes;
+  byId('recipient-key').hidden = cycle.length === 0;
+  byId('donor-key').hidden = cycle.length === 0;
   strikes.replaceChildren();
-  if (!hasStrikes) return;
+  if (!hasStrikes && !cycle.length) return;
 
   const origin = strikes.getBoundingClientRect();
   const rows = [...table.tBodies[0].rows].map(row => [...row.querySelectorAll('.cell')]);
@@ -254,9 +281,9 @@ function drawStrikes() {
   const topLeft = rows[0][0].getBoundingClientRect();
   const bottomRight = rows.at(-1).at(-1).getBoundingClientRect();
 
-  function addStroke(direction, left, top, length) {
+  function addStroke(direction, left, top, length, loop = false) {
     const stroke = document.createElement('span');
-    stroke.className = `stroke ${direction}-stroke`;
+    stroke.className = `stroke ${direction}-stroke${loop ? ' loop-stroke' : ''}`;
     stroke.style.left = `${left - origin.left}px`;
     stroke.style.top = `${top - origin.top}px`;
     const size = direction === 'row' ? 'width' : 'height';
@@ -265,19 +292,40 @@ function drawStrikes() {
   }
 
   rows.forEach((row, i) => {
-    if (state.supply[i] !== 0) return;
+    if (!hasStrikes || state.supply[i] !== 0) return;
     const cell = row[0].getBoundingClientRect();
     addStroke('row', topLeft.left, cell.top + cell.height / 2, bottomRight.right - topLeft.left);
   });
   for (let j = 0; j < columns; j++) {
-    if (state.demand[j] !== 0) continue;
+    if (!hasStrikes || state.demand[j] !== 0) continue;
     const cell = rows[0][j].getBoundingClientRect();
     addStroke('column', cell.left + cell.width / 2, topLeft.top, bottomRight.bottom - topLeft.top);
+  }
+  function center([i, j]) {
+    const cell = rows[i][j].getBoundingClientRect();
+    return [cell.left + cell.width / 2, cell.top + cell.height / 2];
+  }
+  const centers = cycle.map(center);
+  centers.forEach(([x, y], k) => {
+    if (k === centers.length - 1 && state.cycle_closed === false) return;
+    const [nextX, nextY] = centers[(k + 1) % centers.length];
+    if (cycle[k][0] === cycle[(k + 1) % cycle.length][0]) {
+      addStroke('row', Math.min(x, nextX), y, Math.abs(x - nextX), true);
+    } else {
+      addStroke('column', x, Math.min(y, nextY), Math.abs(y - nextY), true);
+    }
+  });
+  if (state.trial) {
+    const [[x, y], [nextX]] = state.trial.map(center);
+    addStroke('row', Math.min(x, nextX), y, Math.abs(x - nextX), true);
+    strikes.lastElementChild.classList.add('trial-stroke');
   }
 }
 
 function render() {
   const state = states[index];
+  byId('method-name').textContent = example === 2 && state.phase !== 'Build the shipping plan'
+    ? 'UV method' : startingMethodName;
   byId('phase').textContent = state.phase;
   byId('step').textContent = `Step ${index + 1} / ${states.length}`;
   table.innerHTML = tableMarkup(state);
@@ -296,7 +344,7 @@ function render() {
   previous.disabled = index === 0;
   next.disabled = index === states.length - 1;
   presentation.scrollTop = 0;
-  drawStrikes();
+  drawGuides();
 }
 
 function advance(delta) {
@@ -333,7 +381,7 @@ if (window.frameElement) {
   observer.observe(window.parent.document.querySelector('.stMain') || frame);
 }
 render();
-new ResizeObserver(drawStrikes).observe(table);
+new ResizeObserver(drawGuides).observe(table);
 requestAnimationFrame(fitViewport);
 </script>
 </body>

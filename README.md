@@ -86,12 +86,38 @@ to replace automatically with a generic Results screen.
 
 ### Transportation Problem - Example 1
 
-The warehouse-to-store shipping example offers the Northwest Corner Rule, Least Cost Method,
-and Vogel’s Approximation Method. Each walkthrough builds the starting solution
-in the tableau, then derives the dual variables and checks every nonbasic
-reduced cost. The test certifies the VAM cost of 1,020 as optimal for this example.
-The app embeds the problem data. Local source slides in `My Teaching Materials/`
-are excluded from Git.
+The warehouse-to-store example starts by checking that supply and demand both
+total 125 cartons. It explains how a zero-cost dummy source or destination
+would balance an unequal total. Choose the Northwest Corner Rule (NWCR),
+Least Cost Method (LCM), or Vogel’s Approximation Method (VAM) to build an
+initial basic feasible solution in the tableau.
+
+Each walkthrough writes the basic-cell equations beside the tableau, fixes one
+dual variable to zero, solves for the others one at a time, and computes the
+reduced costs for the non-basic cells. The demonstration explains why those
+reduced costs stay the same when a different dual variable is fixed for the
+same basis. NWCR gives ₹1,180 and LCM gives ₹1,080. Both plans can be improved.
+VAM gives ₹1,020, which the reduced-cost test certifies as optimal.
+
+### Transportation Problem - Example 2
+
+The S2–D4 cost drops from ₹7 to ₹5. The VAM walkthrough demonstrates the
+tie-breaking order. Among rows and columns tied on penalty, compare the lowest
+available transportation costs. Among candidate cells tied on cost, choose the
+one permitting the largest allocation. If allocations also tie, choose the
+topmost candidate, then the leftmost if needed. The initial solution costs ₹1,130.
+
+Two UV iterations build the adjustment loop, explain how each turn preserves
+supply or demand, and use a red dashed line to show where an alternative path
+gets stuck. Each iteration lists the donor quantities, highlights the cell
+that limits δ, and identifies the entering and leaving variables. The costs
+progress from ₹1,130 to ₹1,030 to the optimal ₹1,020. The final note explains
+how allowing the zero-reduced-cost variable `x23` to enter the basis gives
+an alternate optimal solution at the same cost.
+
+Both examples use Python to calculate the fixed teaching states and
+browser-side playback for Previous and Next. The app embeds the problem data.
+Local source slides in `My Teaching Materials/` are excluded from Git.
 
 ## Project structure
 
@@ -113,6 +139,7 @@ Teaching-Tools/
 |   |-- single_processor_gantt.py
 |   |-- staffing.py
 |   |-- transportation.py
+|   |-- transportation_page.css
 |   `-- transportation_player.html
 |-- pages/
 |   |-- clarke_wright.py
@@ -122,7 +149,8 @@ Teaching-Tools/
 |   |-- operations_research_home.py
 |   |-- simplex_algorithm.py
 |   |-- single_processor_sequencing.py
-|   `-- transportation_problem_example_1.py
+|   |-- transportation_problem_example_1.py
+|   `-- transportation_problem_example_2.py
 |-- tests/
 |   |-- test_clarke_wright.py
 |   |-- test_consecutive_days_off.py
@@ -154,7 +182,7 @@ streamlit run app.py
 
 Streamlit will print the local URL, normally `http://localhost:8501`.
 
-To use the Simplex review port without activating the virtual environment:
+To run the app on the local review port without activating the virtual environment:
 
 ```powershell
 .\.venv\Scripts\python.exe -m streamlit run app.py --server.port 8502 --server.headless true
@@ -162,6 +190,7 @@ To use the Simplex review port without activating the virtual environment:
 
 Open [the local Simplex page](http://localhost:8502/simplex_algorithm).
 Open [the local Transportation Example 1 page](http://localhost:8502/transportation_problem_example_1).
+Open [the local Transportation Example 2 page](http://localhost:8502/transportation_problem_example_2).
 
 Use the sidebar navigation to switch between demonstrations. All pages are
 fixed demonstration mode: there are no editable inputs, quizzes, downloads, or
@@ -185,6 +214,7 @@ Operations Research:
 - [Operations Research homepage](https://operationsmanagement.streamlit.app/operations_research)
 - [Simplex Algorithm - Example 1](https://operationsmanagement.streamlit.app/simplex_algorithm)
 - [Transportation Problem - Example 1](https://operationsmanagement.streamlit.app/transportation_problem_example_1)
+- [Transportation Problem - Example 2](https://operationsmanagement.streamlit.app/transportation_problem_example_2)
 
 ## Release and display controls
 
